@@ -1,0 +1,58 @@
+{
+  "name": "swapcheck",
+  "version": "0.1.0",
+  "description": "Know when your LLM model is changing, find what to move to, and prove the move is safe on your own test cases.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "swapcheck": "dist/cli.mjs"
+  },
+  "main": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "engines": {
+    "node": ">=22.14"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/allthingsN/swapcheck.git"
+  },
+  "homepage": "https://github.com/allthingsN/swapcheck",
+  "bugs": {
+    "url": "https://github.com/allthingsN/swapcheck/issues"
+  },
+  "keywords": [
+    "llm",
+    "model",
+    "deprecation",
+    "regression-testing",
+    "github-action",
+    "mcp",
+    "evals"
+  ],
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --no-warnings --test --test-concurrency=8 \"test/**/*.test.ts\"",
+    "e2e": "node --experimental-strip-types --no-warnings --test --test-concurrency=1 \"e2e/**/*.test.ts\"",
+    "check": "npm run typecheck && npm test && npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "esbuild": "0.28.2",
+    "typescript": "5.9.3",
+    "yaml": "2.9.1"
+  }
+}

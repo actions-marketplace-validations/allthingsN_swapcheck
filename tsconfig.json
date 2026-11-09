@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target": "ES2023", "module": "NodeNext", "moduleResolution": "NodeNext",
+    "strict": true, "noUncheckedIndexedAccess": true, "noImplicitOverride": true,
+    "exactOptionalPropertyTypes": false, "skipLibCheck": true,
+    "allowImportingTsExtensions": true, "noEmit": true, "resolveJsonModule": true,
+    "verbatimModuleSyntax": true, "erasableSyntaxOnly": true, "types": ["node"]
+  },
+  "include": ["src", "test", "e2e", "build.mjs"]
+}

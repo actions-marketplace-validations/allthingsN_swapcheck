@@ -1,0 +1,17 @@
+node_modules/
+dist/
+!action-dist/
+.swapcheck-cache/
+.venv/
+__pycache__/
+*.pyc
+python/build/
+python/dist/
+python/swapcheck/_bin/
+site/_out/
+coverage/
+.DS_Store
+*.tgz
+.env
+.env.*
+secrets/
