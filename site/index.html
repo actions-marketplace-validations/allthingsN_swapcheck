@@ -17,7 +17,7 @@
     <div class="hero__row">
       <p class="hero__lead">Model IDs are not in a lockfile. A hosted model can be retired, re-routed or repriced while your code and CI stay green. Swapcheck scans your repo, tells you what is changing and when, tests what you could move to on your own cases, and opens a PR with the evidence.</p>
       <div class="hero__cmd" data-copy-root>
-        <div class="cmdbar"><span class="cmdbar__p" aria-hidden="true">$</span><code>npx swapcheck</code><button class="copybtn" type="button" data-copy="npx swapcheck" hidden>Copy</button></div>
+        <div class="cmdbar"><span class="cmdbar__p" aria-hidden="true">$</span><code>npx @allthingsai/<wbr>swapcheck</code><button class="copybtn" type="button" data-copy="npx @allthingsai/swapcheck" hidden>Copy</button></div>
         <p class="hero__alt">or <code>uvx swapcheck</code>. Needs no keys and spends nothing to scan.</p>
       </div>
     </div>
@@ -235,7 +235,7 @@
         <div class="term" role="group" aria-label="Terminal replay of Swapcheck commands">
           <div class="term__bar" aria-hidden="true">your-repo</div>
           <div class="term__body">
-            <div class="l cmd on"><span class="pr1" aria-hidden="true">$ </span><code>npx swapcheck</code></div>
+            <div class="l cmd on"><span class="pr1" aria-hidden="true">$ </span><code>npx @allthingsai/swapcheck</code></div>
             <div class="l on">Scanned 214 files. Found 2 models.</div>
             <div class="l d on">Registry: 2026-11-09 (remote)</div>
             <div class="l blank on"></div>
@@ -249,12 +249,12 @@
             <div class="l on">2 of 2 models have a change in the registry.</div>
             <div class="l d on">Wrote models.lock.</div>
             <div class="l blank on"></div>
-            <div class="l cmd on"><span class="pr1" aria-hidden="true">$ </span><code>npx swapcheck watch --fail-within-days 30</code></div>
+            <div class="l cmd on"><span class="pr1" aria-hidden="true">$ </span><code>npx @allthingsai/swapcheck watch --fail-within-days 30</code></div>
             <div class="l on">Watching 2 models from models.lock.</div>
             <div class="l on"><em class="r">2 models changing within 30 days.</em></div>
             <div class="l d on"># exit code 1</div>
             <div class="l blank on"></div>
-            <div class="l cmd on"><span class="pr1" aria-hidden="true">$ </span><code>npx swapcheck test --to example-model-a,example-model-b</code></div>
+            <div class="l cmd on"><span class="pr1" aria-hidden="true">$ </span><code>npx @allthingsai/swapcheck test --to example-model-a,example-model-b</code></div>
             <div class="l on">Spend up to $4.20? [y/N] y</div>
             <div class="l on">Compared claude-sonnet-4-5-20250929 on 24 cases, 5 runs each.</div>
             <div class="l d on">Noise: model against itself flagged 0 cases (false-change rate 0%).</div>
@@ -268,7 +268,7 @@
             <div class="l on">Limits of this measurement:</div>
             <div class="l d on">  - Only the behaviour these cases cover was measured.</div>
             <div class="l blank on"></div>
-            <div class="l cmd on"><span class="pr1" aria-hidden="true">$ </span><code>npx swapcheck bump claude-sonnet-4-5-20250929 --to example-model-b --open-pr</code></div>
+            <div class="l cmd on"><span class="pr1" aria-hidden="true">$ </span><code>npx @allthingsai/swapcheck bump claude-sonnet-4-5-20250929 --to example-model-b --open-pr</code></div>
             <div class="l on">Edited 2 places in 2 files. Opened a pull request with the report attached.</div>
           </div>
         </div>
@@ -345,7 +345,7 @@
     <div class="sec__body installs">
       <div class="install" data-copy-root>
         <h3>Node</h3>
-        <pre><code>npx swapcheck</code></pre>
+        <pre><code>npx @allthingsai/swapcheck</code></pre>
         <button class="copybtn" type="button" data-copy hidden>Copy</button>
       </div>
       <div class="install" data-copy-root>
@@ -363,7 +363,7 @@
       <div class="install" data-copy-root>
         <h3>MCP server</h3>
         <pre><code>{ "mcpServers": { "swapcheck": {
-  "command": "npx", "args": ["-y", "swapcheck", "mcp"]
+  "command": "npx", "args": ["-y", "@allthingsai/swapcheck", "mcp"]
 } } }</code></pre>
         <button class="copybtn" type="button" data-copy hidden>Copy</button>
       </div>

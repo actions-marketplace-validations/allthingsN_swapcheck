@@ -13,8 +13,10 @@ Swapcheck is free and open source (Apache-2.0). It runs on your machine or in yo
 ## Quick start
 
 ```sh
-npx swapcheck
+npx @allthingsai/swapcheck
 ```
+
+To keep it installed, run `npm install -g @allthingsai/swapcheck` and then use the `swapcheck` command. With Python, `uvx swapcheck` or `pip install swapcheck` gives the same tool.
 
 Real output on a small app that calls Claude Sonnet 4.5 (registry of 2026-11-10):
 
@@ -117,7 +119,7 @@ Modes are `watch`, `find`, `check` (spends money, needs `max-usd` and provider k
 Swapcheck speaks MCP over stdio, so coding agents can ask it what is changing:
 
 ```json
-{ "mcpServers": { "swapcheck": { "command": "npx", "args": ["-y", "swapcheck", "mcp"] } } }
+{ "mcpServers": { "swapcheck": { "command": "npx", "args": ["-y", "@allthingsai/swapcheck", "mcp"] } } }
 ```
 
 The free tools (`scan`, `watch`, `find`, `explain_event`) are always on. The paid `test` tool only appears when you set `SWAPCHECK_MCP_ALLOW_SPEND=1`, and it can never spend more than your config budget or `SWAPCHECK_MCP_MAX_USD`, whatever the agent asks for.

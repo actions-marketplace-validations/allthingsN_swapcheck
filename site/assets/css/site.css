@@ -197,7 +197,7 @@ b, strong { font-weight: 600; }
 :root[data-theme="dark"] .hero__lead { color: var(--hero-muted); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .hero__lead { color: var(--hero-muted); } }
 .cmdbar { display: flex; align-items: center; gap: 12px; background: var(--cmd); color: var(--cmd-ink); padding: 14px 14px 14px 18px; font: 600 clamp(1.15rem, 1.9vw, 1.6rem)/1.1 var(--mono); }
-.cmdbar code { font-size: inherit; font-weight: inherit; flex: 1; min-width: 0; }
+.cmdbar code { font-size: inherit; font-weight: inherit; flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .cmdbar__p { opacity: .7; }
 .copybtn { font: 500 .8rem/1 var(--mono); background: transparent; color: inherit; border: 1.5px solid currentColor; padding: 8px 11px; cursor: pointer; border-radius: 0; }
 .hero__alt { margin-top: 10px; font-size: .95rem; }

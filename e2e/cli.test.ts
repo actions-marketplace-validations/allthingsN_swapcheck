@@ -429,13 +429,13 @@ describe("npm package", () => {
     assert.ok(tarball);
     writeFileSync(path.join(install, "package.json"), JSON.stringify({ name: "t", version: "1.0.0", private: true }));
     await execFileAsync(...npm(["install", "--no-audit", "--no-fund", "--ignore-scripts", path.join(pack, tarball)]), { cwd: install, timeout: 120_000 });
-    const pkg = JSON.parse(readFileSync(path.join(install, "node_modules/swapcheck/package.json"), "utf8")) as { dependencies?: unknown };
+    const pkg = JSON.parse(readFileSync(path.join(install, "node_modules/@allthingsai/swapcheck/package.json"), "utf8")) as { dependencies?: unknown };
     assert.equal(pkg.dependencies, undefined);
     const dir = project({ "src/llm.ts": openaiCall(models.retiring) });
-    const result = await runNode(path.join(install, "node_modules/swapcheck/dist/cli.mjs"), ["--offline", "--no-lock"], { cwd: dir, env: cleanEnv(home) });
+    const result = await runNode(path.join(install, "node_modules/@allthingsai/swapcheck/dist/cli.mjs"), ["--offline", "--no-lock"], { cwd: dir, env: cleanEnv(home) });
     assert.equal(result.code, 0, result.stderr);
     assert.ok(result.stdout.includes(models.retiring));
-    const library = await execFileAsync(process.execPath, ["--input-type=module", "-e", "import('swapcheck').then((m) => console.log(typeof m.scanProject))"], { cwd: install, timeout: 30_000 });
+    const library = await execFileAsync(process.execPath, ["--input-type=module", "-e", "import('@allthingsai/swapcheck').then((m) => console.log(typeof m.scanProject))"], { cwd: install, timeout: 30_000 });
     assert.equal(library.stdout.trim(), "function");
   });
 });

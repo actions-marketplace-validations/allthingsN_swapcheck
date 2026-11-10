@@ -31,25 +31,25 @@
     <article class="prose docs__body">
       <h2 id="quickstart">Quickstart</h2>
       <p>Run this in a repo that calls a hosted model. It needs no keys and no config, and it spends nothing.</p>
-      <pre><code>npx swapcheck     # or: uvx swapcheck</code></pre>
+      <pre><code>npx @allthingsai/swapcheck     # or: uvx swapcheck</code></pre>
       <p>It finds model IDs in your code and config, shows which are changing with dates and source links, and writes <code>models.lock</code>. Commit that file. Then:</p>
       <pre><code># Fail CI when something changes within 30 days
-npx swapcheck watch --fail-within-days 30
+npx @allthingsai/swapcheck watch --fail-within-days 30
 
 # Shortlist replacements for a model
-npx swapcheck find gemini-2.5-pro
+npx @allthingsai/swapcheck find gemini-2.5-pro
 
 # Write contract checks and drafts from your code
-npx swapcheck cases init
-npx swapcheck cases accept --all
+npx @allthingsai/swapcheck cases init
+npx @allthingsai/swapcheck cases accept --all
 
 # Measure your current model, then compare candidates
 export GEMINI_API_KEY=...
-npx swapcheck baseline
-npx swapcheck test --to candidate-a,candidate-b
+npx @allthingsai/swapcheck baseline
+npx @allthingsai/swapcheck test --to candidate-a,candidate-b
 
 # Edit the IDs and open a pull request
-npx swapcheck bump gemini-2.5-pro --to candidate-b --open-pr</code></pre>
+npx @allthingsai/swapcheck bump gemini-2.5-pro --to candidate-b --open-pr</code></pre>
       <p>Commands that spend show the maximum cost and the vendors first, and ask. Off a terminal, they refuse to spend without <code>--yes</code>. Keys come from <code>OPENAI_API_KEY</code>, <code>ANTHROPIC_API_KEY</code>, <code>GEMINI_API_KEY</code> or <code>GOOGLE_API_KEY</code>, and <code>OPENROUTER_API_KEY</code>.</p>
 
       <h2 id="commands">Commands</h2>
@@ -165,7 +165,7 @@ jobs:
 
       <h2 id="mcp">MCP server</h2>
       <pre><code>{ "mcpServers": { "swapcheck": {
-  "command": "npx", "args": ["-y", "swapcheck", "mcp"]
+  "command": "npx", "args": ["-y", "@allthingsai/swapcheck", "mcp"]
 } } }</code></pre>
       <p>Tools: <code>scan</code>, <code>watch</code>, <code>find</code> and <code>explain_event</code>. Tools that spend money, such as <code>test</code>, appear only when <code>SWAPCHECK_MCP_ALLOW_SPEND=1</code> is set. The budget for a <code>test</code> call is the lowest of the requested <code>max_usd</code>, <code>budget.max_usd_per_run</code> in your config, and <code>SWAPCHECK_MCP_MAX_USD</code> if set, so the agent can never raise it.</p>
 
