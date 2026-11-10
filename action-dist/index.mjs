@@ -7398,13 +7398,13 @@ import { fileURLToPath } from "node:url";
 import { promisify as promisify2 } from "node:util";
 
 // src/bump/plan.ts
-import { lstat as lstat3, mkdtemp, readFile, rename as rename2, rm as rm2, stat as stat2, writeFile as writeFile2, chmod as chmod2 } from "node:fs/promises";
+import { lstat as lstat4, mkdtemp, readFile, rename as rename2, rm as rm2, stat as stat2, writeFile as writeFile2, chmod as chmod2 } from "node:fs/promises";
 import { randomBytes as randomBytes2 } from "node:crypto";
 import os from "node:os";
 import path3 from "node:path";
 
 // src/lock.ts
-import { lstat as lstat2 } from "node:fs/promises";
+import { lstat as lstat3 } from "node:fs/promises";
 
 // src/types.ts
 var EXIT = { OK: 0, FAIL: 1, USAGE: 2, UNMEASURED: 3 };
@@ -7519,7 +7519,7 @@ function redactSecrets(text, env = process.env) {
 
 // src/scan/scan.ts
 import { constants as fsConstants } from "node:fs";
-import { open, readdir, realpath as realpath2 } from "node:fs/promises";
+import { lstat as lstat2, open, readdir, realpath as realpath2 } from "node:fs/promises";
 import path2 from "node:path";
 
 // src/scan/ids.ts
@@ -9465,8 +9465,11 @@ function isDataOutputPath(rel) {
 async function readTextFile(file, limit = MAX_SCANNED_BYTES) {
   let handle;
   try {
+    const linkInfo = await lstat2(file);
+    if (linkInfo.isSymbolicLink()) return null;
     handle = await open(file, fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0));
     const info = await handle.stat();
+    if (info.ino !== linkInfo.ino || info.dev !== linkInfo.dev) return null;
     if (!info.isFile() || info.size > limit) return null;
     const bytes = await handle.readFile();
     if (bytes.subarray(0, 8e3).includes(0)) return null;
@@ -9744,7 +9747,7 @@ function validateLock(value) {
 async function readLock(root) {
   const target = insideRoot(root, LOCK_NAME);
   try {
-    await lstat2(target);
+    await lstat3(target);
   } catch {
     return null;
   }
@@ -10365,7 +10368,7 @@ async function readForEdit(root, file) {
     if (error instanceof SwapcheckError) return { reason: "the path is outside the project" };
     return { reason: "the file could not be found" };
   }
-  const info = await lstat3(absolute);
+  const info = await lstat4(absolute);
   if (!info.isFile()) return { reason: "it is not a regular file" };
   if (info.size > MAX_FILE_BYTES) return { reason: "the file is larger than 2 MB" };
   const bytes = await readFile(absolute);
@@ -10511,7 +10514,7 @@ async function applyBump(root, plan) {
   try {
     for (const change of plan.changes) {
       const target = insideRoot(root, change.file);
-      if ((await lstat3(target)).isSymbolicLink() || !await realInsideRoot(root, path3.dirname(target))) throw new SwapcheckError(`${change.file} became a symbolic link or moved outside the project, so nothing was written. Run the bump again.`);
+      if ((await lstat4(target)).isSymbolicLink() || !await realInsideRoot(root, path3.dirname(target))) throw new SwapcheckError(`${change.file} became a symbolic link or moved outside the project, so nothing was written. Run the bump again.`);
       const current = await readFile(target, "utf8");
       if (current !== change.before) throw new SwapcheckError(`${change.file} changed while Swapcheck was working, so nothing was written. Run the bump again.`);
       const { mode } = await stat2(target);
@@ -11026,10 +11029,17 @@ async function postJson(url, headers, body, req, label, options) {
   let lastError;
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     if (attempt > 0) req.beforeRetry?.(attempt);
-    const timeout = AbortSignal.timeout(timeoutMs);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(new DOMException("The request timed out.", "TimeoutError")), timeoutMs);
+    const timeout = controller.signal;
     const signal = req.signal ? AbortSignal.any([req.signal, timeout]) : timeout;
     const init = { method: "POST", headers: { "content-type": "application/json", ...headers }, body: payload, signal, redirect: "error" };
-    const outcome = await attemptPost(url, init, req, label, timeout, timeoutMs, fetchImpl);
+    let outcome;
+    try {
+      outcome = await attemptPost(url, init, req, label, timeout, timeoutMs, fetchImpl);
+    } finally {
+      clearTimeout(timer);
+    }
     if ("result" in outcome) return outcome.result;
     lastError = outcome.retry;
     if (attempt < MAX_ATTEMPTS - 1) await sleep(outcome.waitMs ?? BASE_BACKOFF_MS * 2 ** attempt, req.signal);
@@ -12899,7 +12909,7 @@ import path8 from "node:path";
 
 // src/config.ts
 var import_yaml = __toESM(require_dist(), 1);
-import { lstat as lstat4 } from "node:fs/promises";
+import { lstat as lstat5 } from "node:fs/promises";
 var DEFAULT_CONFIG = {
   models: [],
   cases: "swapcheck/cases",
@@ -13060,7 +13070,7 @@ async function readConfigText(root, target, label) {
 }
 async function exists(file) {
   try {
-    await lstat4(file);
+    await lstat5(file);
     return true;
   } catch {
     return false;

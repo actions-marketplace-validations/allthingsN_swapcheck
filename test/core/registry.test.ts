@@ -353,9 +353,11 @@ test("a read-only cache folder does not stop a remote load", async () => {
 });
 
 test("default cache folder per platform", () => {
-  assert.match(defaultCacheDir({}, "darwin"), /Library\/Caches\/swapcheck$/);
-  assert.equal(defaultCacheDir({ XDG_CACHE_HOME: "/x" }, "linux"), "/x/swapcheck");
-  assert.match(defaultCacheDir({ XDG_CACHE_HOME: "relative" }, "linux"), /\.cache\/swapcheck$/);
+  // Paths are joined with the host's separator, so compare in forward slashes.
+  const slash = (p: string): string => p.split(path.sep).join("/");
+  assert.match(slash(defaultCacheDir({}, "darwin")), /Library\/Caches\/swapcheck$/);
+  assert.equal(slash(defaultCacheDir({ XDG_CACHE_HOME: "/x" }, "linux")), "/x/swapcheck");
+  assert.match(slash(defaultCacheDir({ XDG_CACHE_HOME: "relative" }, "linux")), /\.cache\/swapcheck$/);
   assert.match(defaultCacheDir({ LOCALAPPDATA: "C:\\Local" }, "win32"), /swapcheck/);
 });
 

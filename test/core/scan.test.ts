@@ -588,7 +588,7 @@ test("a root reached through a symlink still scans", async () => {
   });
 });
 
-test("an unreadable file is skipped without failing the scan", { skip: process.getuid?.() === 0 }, async () => {
+test("an unreadable file is skipped without failing the scan", { skip: process.getuid?.() === 0 || process.platform === "win32" }, async () => {
   await withProject({ "a.py": `f(model="gpt-4o")`, "b.py": `f(model="gpt-4.1")` }, async (root) => {
     await chmod(path.join(root, "a.py"), 0o000);
     const result = await scanProject(root, snapshot());

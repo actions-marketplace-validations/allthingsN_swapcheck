@@ -1,5 +1,5 @@
 import { constants as fsConstants } from "node:fs";
-import { open, readdir, realpath } from "node:fs/promises";
+import { lstat, open, readdir, realpath } from "node:fs/promises";
 import path from "node:path";
 import type { FindingKind, RegistrySnapshot, ScanFinding, ScanResult, UnresolvedCall } from "../types.ts";
 import { SwapcheckError } from "../util/errors.ts";
@@ -971,8 +971,12 @@ function isDataOutputPath(rel: string): boolean {
 export async function readTextFile(file: string, limit: number = MAX_SCANNED_BYTES): Promise<string | null> {
   let handle;
   try {
+    // Windows has no O_NOFOLLOW, so check the link first and confirm the opened file is the same one.
+    const linkInfo = await lstat(file);
+    if (linkInfo.isSymbolicLink()) return null;
     handle = await open(file, fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0));
     const info = await handle.stat();
+    if (info.ino !== linkInfo.ino || info.dev !== linkInfo.dev) return null;
     if (!info.isFile() || info.size > limit) return null;
     const bytes = await handle.readFile();
     if (bytes.subarray(0, 8000).includes(0)) return null;

@@ -137,10 +137,18 @@ export async function postJson(
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     if (attempt > 0) req.beforeRetry?.(attempt);
-    const timeout = AbortSignal.timeout(timeoutMs);
+    // A referenced timer, unlike AbortSignal.timeout, keeps the process alive until the request settles.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(new DOMException("The request timed out.", "TimeoutError")), timeoutMs);
+    const timeout = controller.signal;
     const signal = req.signal ? AbortSignal.any([req.signal, timeout]) : timeout;
     const init: RequestInit = { method: "POST", headers: { "content-type": "application/json", ...headers }, body: payload, signal, redirect: "error" };
-    const outcome = await attemptPost(url, init, req, label, timeout, timeoutMs, fetchImpl);
+    let outcome: Attempt;
+    try {
+      outcome = await attemptPost(url, init, req, label, timeout, timeoutMs, fetchImpl);
+    } finally {
+      clearTimeout(timer);
+    }
     if ("result" in outcome) return outcome.result;
     lastError = outcome.retry;
     if (attempt < MAX_ATTEMPTS - 1) await sleep(outcome.waitMs ?? BASE_BACKOFF_MS * 2 ** attempt, req.signal);
