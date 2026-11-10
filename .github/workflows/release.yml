@@ -181,9 +181,14 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "24"
-      # Trusted publishing needs npm 11.5.1 or newer. There is no token: npm exchanges the OIDC identity.
+          registry-url: https://registry.npmjs.org
+      # Trusted publishing needs npm 11.5.1 or newer, and npm exchanges the OIDC identity when it is configured.
+      # npm only allows trusted publishing on a package that already exists, so the very first release uses
+      # NPM_TOKEN, a short-lived token in the release environment. Delete that secret once trusted publishing is set up.
       - run: npm install --global --ignore-scripts npm@11.6.2
       - run: npm publish artifacts/*.tgz --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-pypi:
     needs: attest
