@@ -186,7 +186,8 @@ jobs:
       # npm only allows trusted publishing on a package that already exists, so the very first release uses
       # NPM_TOKEN, a short-lived token in the release environment. Delete that secret once trusted publishing is set up.
       - run: npm install --global --ignore-scripts npm@11.6.2
-      - run: npm publish artifacts/*.tgz --provenance --access public
+      # The leading ./ matters: without it npm reads "artifacts/x.tgz" as a GitHub repo shorthand.
+      - run: npm publish ./artifacts/*.tgz --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
