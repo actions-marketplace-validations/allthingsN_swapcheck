@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- @head title="Docs" description="Swapcheck quickstart, commands, swapcheck.yaml, models.lock, the GitHub Action, verdict meanings, exit codes and limits." -->
+<script type="module" src="assets/js/site.js"></script>
+</head>
+<body>
+<!-- @header -->
+<main id="main">
+  <section class="page-hero">
+    <div class="wrap">
+      <h1>Docs</h1>
+      <p class="sec__intro">Swapcheck tells you when a hosted LLM model is changing, finds what to move to, and tests the move on your own cases.</p>
+    </div>
+  </section>
+  <div class="wrap docs">
+    <nav class="docs__toc" aria-label="On this page">
+      <ol>
+        <li><a href="#quickstart">Quickstart</a></li>
+        <li><a href="#commands">Commands</a></li>
+        <li><a href="#config">Config</a></li>
+        <li><a href="#lock">models.lock</a></li>
+        <li><a href="#cases">Cases</a></li>
+        <li><a href="#action">GitHub Action</a></li>
+        <li><a href="#mcp">MCP server</a></li>
+        <li><a href="#verdicts">Verdicts</a></li>
+        <li><a href="#exit">Exit codes</a></li>
+        <li><a href="#limits">Limits</a></li>
+      </ol>
+    </nav>
+    <article class="prose docs__body">
+      <h2 id="quickstart">Quickstart</h2>
+      <p>Run this in a repo that calls a hosted model. It needs no keys and no config, and it spends nothing.</p>
+      <pre><code>npx swapcheck     # or: uvx swapcheck</code></pre>
+      <p>It finds model IDs in your code and config, shows which are changing with dates and source links, and writes <code>models.lock</code>. Commit that file. Then:</p>
+      <pre><code># Fail CI when something changes within 30 days
+npx swapcheck watch --fail-within-days 30
+
+# Shortlist replacements for a model
+npx swapcheck find gemini-2.5-pro
+
+# Write contract checks and drafts from your code
+npx swapcheck cases init
+npx swapcheck cases accept --all
+
+# Measure your current model, then compare candidates
+export GEMINI_API_KEY=...
+npx swapcheck baseline
+npx swapcheck test --to candidate-a,candidate-b
+
+# Edit the IDs and open a pull request
+npx swapcheck bump gemini-2.5-pro --to candidate-b --open-pr</code></pre>
+      <p>Commands that spend show the maximum cost and the vendors first, and ask. Off a terminal, they refuse to spend without <code>--yes</code>. Keys come from <code>OPENAI_API_KEY</code>, <code>ANTHROPIC_API_KEY</code>, <code>GEMINI_API_KEY</code> or <code>GOOGLE_API_KEY</code>, and <code>OPENROUTER_API_KEY</code>.</p>
+
+      <h2 id="commands">Commands</h2>
+      <div class="tablewrap" tabindex="0" role="region" aria-label="Commands"><table>
+        <thead><tr><th scope="col">Command</th><th scope="col">What it does</th><th scope="col">Spends</th></tr></thead>
+        <tbody>
+          <tr><td><code>swapcheck</code>, <code>scan</code></td><td>Find models and show what is changing. Writes <code>models.lock</code> unless <code>--no-lock</code>.</td><td>No</td></tr>
+          <tr><td><code>watch</code></td><td>Compare <code>models.lock</code> to the registry. <code>--fail-within-days N</code> exits 1 inside the window.</td><td>No</td></tr>
+          <tr><td><code>find &lt;model&gt;</code></td><td>Shortlist replacements. <code>--limit N</code> (default 5). <code>--test</code> runs the shortlist.</td><td>Only with <code>--test</code></td></tr>
+          <tr><td><code>cases init</code></td><td>Write contract checks and drafts from your code.</td><td>No</td></tr>
+          <tr><td><code>cases import &lt;kind&gt; &lt;path&gt;</code></td><td>Import from <code>modelbump</code>, <code>modelpin</code>, <code>otel</code>, <code>litellm</code> or <code>langfuse</code>. Traces are redacted unless <code>--allow-unredacted</code>.</td><td>No</td></tr>
+          <tr><td><code>cases accept &lt;id&gt;... | --all</code></td><td>Accept generated drafts. Drafts do not run until accepted.</td><td>No</td></tr>
+          <tr><td><code>baseline</code></td><td>Measure the current model and its noise. <code>--model</code> picks one.</td><td>Yes</td></tr>
+          <tr><td><code>test --to a,b</code></td><td>Compare candidates. <code>--from</code> sets the current model.</td><td>Yes</td></tr>
+          <tr><td><code>bump &lt;model&gt; --to &lt;model&gt;</code></td><td>Edit IDs, remove parameters the target rejects, update the lock. <code>--dry-run</code>, <code>--open-pr</code>, <code>--evidence &lt;file&gt;</code>.</td><td>No</td></tr>
+          <tr><td><code>report &lt;file&gt;</code></td><td>Render a saved report. Exits with the code its verdict implies.</td><td>No</td></tr>
+          <tr><td><code>mcp</code></td><td>Run an MCP server on stdio.</td><td>As above</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Options on every command</h3>
+      <p><code>--format text|json|markdown|sarif</code>, <code>--cwd &lt;dir&gt;</code>, <code>--config &lt;file&gt;</code>, <code>--registry-url &lt;url&gt;</code>, <code>--offline</code>, <code>--yes</code>, <code>--no-color</code>, <code>--debug</code>.</p>
+      <h3>Options on commands that spend</h3>
+      <p><code>--runs &lt;n&gt;</code> runs per case, <code>--max-usd &lt;amount&gt;</code> hard spending limit, <code>--judge &lt;model&gt;</code> model that grades meaning checks, <code>--route &lt;route&gt;</code> where the model is served, such as <code>aws-bedrock</code>.</p>
+
+      <h2 id="config">Config</h2>
+      <p><code>swapcheck.yaml</code> is optional. Everything has a default.</p>
+      <pre><code>models:
+  - id: gemini-2.5-pro
+    route: google-ai-studio
+    paths: ["app/**"]
+cases: swapcheck/cases
+runs: 5
+budget:
+  max_usd_per_run: 5
+policy:
+  providers: [google, anthropic]
+  regions: [us, eu]
+  licenses: [proprietary]
+  max_usd_per_million_output: 15
+watch:
+  fail_within_days: 30
+include_text_in_reports: false
+exclude: ["vendor/**"]</code></pre>
+      <div class="tablewrap" tabindex="0" role="region" aria-label="Config fields"><table>
+        <thead><tr><th scope="col">Field</th><th scope="col">Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>models</code></td><td>Declare models the scanner cannot see, such as IDs built at runtime.</td></tr>
+          <tr><td><code>cases</code></td><td>Folder of case files.</td></tr>
+          <tr><td><code>runs</code></td><td>Runs per case and model. Default 5.</td></tr>
+          <tr><td><code>budget.max_usd_per_run</code></td><td>Hard limit for one paid command, retries included. Default 5.</td></tr>
+          <tr><td><code>policy</code></td><td>What <code>find</code> may suggest: providers, regions, licences, price cap.</td></tr>
+          <tr><td><code>watch.fail_within_days</code></td><td>Default window for <code>watch</code>. Default 30.</td></tr>
+          <tr><td><code>include_text_in_reports</code></td><td>Keep model output in reports. Off by default.</td></tr>
+          <tr><td><code>exclude</code></td><td>Paths the scanner skips.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2 id="lock">models.lock</h2>
+      <p>Hosted model IDs are not pinned by anything in your package manager, so Swapcheck writes a lockfile for them. It records each model, where it is served, its status and when it was last verified.</p>
+      <pre><code>{
+  "version": 1,
+  "models": [
+    {
+      "id": "gemini-2.5-pro",
+      "route": "google-ai-studio",
+      "status": "reroute_scheduled",
+      "reroute_to": "gemini-3.8-flash",
+      "effective": "2026-12-01",
+      "verified_at": null,
+      "baseline": null
+    }
+  ]
+}</code></pre>
+      <p>Commit it. <code>watch</code> compares it to the registry, so a change shows up in CI even though your code did not move. It cannot stop a provider changing a model. It makes the change visible.</p>
+      <h3>Files in your repo</h3>
+      <p><code>swapcheck.yaml</code> (optional), <code>models.lock</code>, <code>swapcheck/cases/*.json</code>, <code>swapcheck/reports/&lt;id&gt;.json</code>, <code>swapcheck/baselines/&lt;hash&gt;.json</code>.</p>
+
+      <h2 id="cases">Cases</h2>
+      <p>A case is a request plus checks on the response. Available checks: <code>json_valid</code>, <code>json_schema</code>, <code>label_in</code>, <code>contains</code>, <code>not_contains</code>, <code>regex</code>, <code>tool_called</code>, <code>tool_not_called</code>, <code>tool_args_valid</code>, <code>no_refusal</code>, <code>refusal</code>, <code>max_tokens_output</code> and <code>meaning</code>, which a judge model grades.</p>
+      <p>Generated cases are excluded until you accept them. Multi-turn cases replay only up to each decision point. Later logged user turns are never replayed against a new model's replies.</p>
+
+      <h2 id="action">GitHub Action</h2>
+      <pre><code>name: Model watch
+on:
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1"
+permissions:
+  contents: read
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: allthingsN/swapcheck@v1
+        with:
+          fail-within-days: 30</code></pre>
+      <p>A scheduled run matters, because the point is to notice a change when your code has not moved.</p>
+      <div class="tablewrap" tabindex="0" role="region" aria-label="Action inputs"><table>
+        <thead><tr><th scope="col">Input</th><th scope="col">Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>mode</code></td><td><code>watch</code> (default), <code>check</code>, <code>find</code> or <code>bump</code>.</td></tr>
+          <tr><td><code>models</code></td><td>Models to act on. Defaults to what the scan finds.</td></tr>
+          <tr><td><code>candidates</code></td><td>Models to compare in <code>check</code> mode, or targets in <code>bump</code> mode.</td></tr>
+          <tr><td><code>cases</code>, <code>runs</code></td><td>Case folder and runs per case. Default to the config.</td></tr>
+          <tr><td><code>max-usd</code></td><td>The most this job may spend. <code>check</code> mode spends nothing without it.</td></tr>
+          <tr><td><code>fail-within-days</code></td><td>Fail when a change takes effect within this many days.</td></tr>
+          <tr><td><code>open-prs</code></td><td>In <code>bump</code> mode, open one pull request per model. Needs <code>GITHUB_TOKEN</code>.</td></tr>
+          <tr><td><code>registry-url</code>, <code>working-directory</code></td><td>Registry snapshot URL and project folder.</td></tr>
+        </tbody>
+      </table></div>
+      <p>Outputs: <code>verdict</code>, <code>changes-due</code>, <code>report-path</code>, <code>spent-usd</code> and <code>recommended-model</code>. In <code>check</code> mode, <code>recommended-model</code> is the cheapest candidate with no change detected. Pull requests from forks get the free scan only.</p>
+
+      <h2 id="mcp">MCP server</h2>
+      <pre><code>{ "mcpServers": { "swapcheck": {
+  "command": "npx", "args": ["-y", "swapcheck", "mcp"]
+} } }</code></pre>
+      <p>Tools: <code>scan</code>, <code>watch</code>, <code>find</code> and <code>explain_event</code>. Tools that spend money, such as <code>test</code>, appear only when <code>SWAPCHECK_MCP_ALLOW_SPEND=1</code> is set. The budget for a <code>test</code> call is the lowest of the requested <code>max_usd</code>, <code>budget.max_usd_per_run</code> in your config, and <code>SWAPCHECK_MCP_MAX_USD</code> if set, so the agent can never raise it.</p>
+
+      <h2 id="verdicts">Verdicts</h2>
+      <div class="tablewrap" tabindex="0" role="region" aria-label="Verdicts"><table>
+        <thead><tr><th scope="col">Verdict</th><th scope="col">Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>NO_CHANGE_DETECTED</code></td><td>Nothing differed beyond noise on your cases. Not a guarantee.</td></tr>
+          <tr><td><code>CHANGED</code></td><td>Check results, tool calls or token use differed beyond noise, with no confirmed drop.</td></tr>
+          <tr><td><code>REGRESSED</code></td><td>At least one case dropped and the drop repeated on a fresh sample.</td></tr>
+          <tr><td><code>NOT_ENOUGH_EVIDENCE</code></td><td>Error rate above 20%, the budget ran out, or fewer than six usable cases.</td></tr>
+        </tbody>
+      </table></div>
+      <h3>How a verdict is reached</h3>
+      <ol>
+        <li>Baseline: the current model, N runs per case (default 5).</li>
+        <li>Noise: compare two independent halves or a second baseline, and report the false-change rate.</li>
+        <li>Candidate: N runs per case on each candidate.</li>
+        <li>Per case: two-sided Fisher exact test on pass counts, Benjamini-Hochberg across the suite.</li>
+        <li>Suite: paired permutation test across cases on pass-rate difference, with a bootstrap 95% interval.</li>
+        <li>Any case with q &lt; 0.1 and a lower candidate pass rate is re-run on a fresh sample of N, and must reproduce to count as confirmed.</li>
+      </ol>
+
+      <h2 id="exit">Exit codes</h2>
+      <div class="tablewrap" tabindex="0" role="region" aria-label="Exit codes"><table>
+        <thead><tr><th scope="col">Code</th><th scope="col">Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>0</code></td><td>Fine.</td></tr>
+          <tr><td><code>1</code></td><td>A regression, or a change inside the failure window.</td></tr>
+          <tr><td><code>2</code></td><td>Config or usage error.</td></tr>
+          <tr><td><code>3</code></td><td>Could not measure: budget hit, provider errors, or not enough evidence.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2 id="limits">Limits</h2>
+      <ul>
+        <li><strong>It only knows what your cases cover.</strong> A behaviour you do not test can change without any verdict noticing.</li>
+        <li><strong>Five runs detect large drops, not small ones.</strong> Raise <code>--runs</code> to find smaller differences, at more cost.</li>
+        <li><strong>The registry is what providers announce.</strong> An unannounced change will not appear. Dates can move.</li>
+        <li><strong>The scanner reads source statically.</strong> IDs built at runtime are reported as unresolved. Declare them in <code>swapcheck.yaml</code>.</li>
+        <li><strong>A result describes one day.</strong> A hosted model can change after you test it.</li>
+        <li><strong><code>bump</code> edits IDs and parameters.</strong> It does not rewrite your prompts.</li>
+        <li><strong>Accuracy has not been published yet.</strong> The test suite targets under 5% false alarms and 80% of seeded regressions caught, in simulation.</li>
+      </ul>
+    </article>
+  </div>
+</main>
+<!-- @footer -->
+</body>
+</html>

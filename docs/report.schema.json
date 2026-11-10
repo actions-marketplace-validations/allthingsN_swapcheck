@@ -1,0 +1,400 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/allthingsN/swapcheck/docs/report.schema.json",
+  "title": "Swapcheck report",
+  "description": "Schema for swapcheck.report/v1. Reports contain case hashes and scores; output_text appears only when include_text_in_reports is true.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "created_at",
+    "swapcheck_version",
+    "registry_generated_at",
+    "baseline_model",
+    "runs_per_case",
+    "case_count",
+    "case_origins",
+    "noise",
+    "candidates",
+    "spent_usd",
+    "budget_usd",
+    "stopped_early",
+    "vendors_seen",
+    "limits",
+    "runs"
+  ],
+  "properties": {
+    "schema": {
+      "type": "string",
+      "enum": [
+        "swapcheck.report/v1"
+      ]
+    },
+    "id": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "swapcheck_version": {
+      "type": "string"
+    },
+    "registry_generated_at": {
+      "type": "string"
+    },
+    "baseline_model": {
+      "type": "string"
+    },
+    "runs_per_case": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "case_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "case_origins": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "team",
+        "trace",
+        "imported",
+        "generated"
+      ],
+      "properties": {
+        "team": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "trace": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "imported": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "generated": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "noise": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "false_change_rate",
+        "flagged_cases"
+      ],
+      "properties": {
+        "false_change_rate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "flagged_cases": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "model",
+          "verdict",
+          "reason",
+          "cases",
+          "suite_pass_rate",
+          "latency_ms_p50",
+          "cost_usd_per_case",
+          "error_rate",
+          "spent_usd"
+        ],
+        "properties": {
+          "model": {
+            "type": "string"
+          },
+          "route": {
+            "type": "string"
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "NO_CHANGE_DETECTED",
+              "CHANGED",
+              "REGRESSED",
+              "NOT_ENOUGH_EVIDENCE"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "cases": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "case_id",
+                "case_hash",
+                "baseline_passes",
+                "baseline_runs",
+                "candidate_passes",
+                "candidate_runs",
+                "p_value",
+                "q_value",
+                "confirmed",
+                "verdict",
+                "failed_checks"
+              ],
+              "properties": {
+                "case_id": {
+                  "type": "string"
+                },
+                "case_hash": {
+                  "type": "string"
+                },
+                "baseline_passes": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "baseline_runs": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "candidate_passes": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "candidate_runs": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "p_value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "q_value": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "confirmed": {
+                  "type": "boolean"
+                },
+                "verdict": {
+                  "type": "string",
+                  "enum": [
+                    "NO_CHANGE_DETECTED",
+                    "CHANGED",
+                    "REGRESSED",
+                    "NOT_ENOUGH_EVIDENCE"
+                  ]
+                },
+                "failed_checks": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "suite_pass_rate": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "baseline",
+              "candidate",
+              "ci95",
+              "p_value"
+            ],
+            "properties": {
+              "baseline": {
+                "type": "number"
+              },
+              "candidate": {
+                "type": "number"
+              },
+              "ci95": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "p_value": {
+                "type": "number"
+              }
+            }
+          },
+          "latency_ms_p50": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "baseline",
+              "candidate",
+              "delta"
+            ],
+            "properties": {
+              "baseline": {
+                "type": "number"
+              },
+              "candidate": {
+                "type": "number"
+              },
+              "delta": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "ci95": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "cost_usd_per_case": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "baseline",
+              "candidate",
+              "delta"
+            ],
+            "properties": {
+              "baseline": {
+                "type": "number"
+              },
+              "candidate": {
+                "type": "number"
+              },
+              "delta": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "ci95": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "error_rate": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "spent_usd": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "spent_usd": {
+      "type": "number"
+    },
+    "budget_usd": {
+      "type": "number"
+    },
+    "stopped_early": {
+      "type": "boolean"
+    },
+    "vendors_seen": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "limits": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "runs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "case_id",
+          "model",
+          "run",
+          "passed",
+          "failed_checks",
+          "latency_ms",
+          "input_tokens",
+          "output_tokens",
+          "cost_usd"
+        ],
+        "properties": {
+          "case_id": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "run": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "passed": {
+            "type": "boolean"
+          },
+          "failed_checks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "latency_ms": {
+            "type": "number"
+          },
+          "input_tokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "output_tokens": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cost_usd": {
+            "type": "number"
+          },
+          "served_model": {
+            "type": "string"
+          },
+          "error": {
+            "type": "string"
+          },
+          "output_text": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

@@ -68,16 +68,17 @@ Exit codes: 0 fine; 1 regression, or change inside failure window; 2 config or u
 
 ## Testing method
 
-1. Baseline: current model N runs per case (default 5).
-2. Noise: compare two independent halves or a second baseline. Report the false-change rate.
+1. Baseline: current model 2N runs per case (default N is 5), collected as two independent halves.
+2. Noise: compare the two baseline halves with Fisher's exact test. Report the share of cases that differ from themselves at p < 0.1. The halves are then pooled, so the baseline is less noisy than the candidate sample.
 3. Candidate: N runs per case on each candidate.
-4. Per case: two-sided Fisher exact on pass counts; Benjamini-Hochberg across the suite.
+4. Per case: two-sided Fisher exact on pass counts against the pooled baseline. Benjamini-Hochberg q-values are reported across the suite.
 5. Suite: paired permutation test across cases on pass-rate difference, with a bootstrap 95% CI.
-6. Any case with q < 0.1 and a lower candidate pass rate is re-run on a fresh sample of N and must reproduce (pooled fresh sample also lower with p < 0.1 one-sided) to count as `confirmed`.
-7. Verdicts: any confirmed drop → `REGRESSED`. Check-result, tool or token differences beyond noise with no confirmed drop → `CHANGED`. Clean → `NO_CHANGE_DETECTED`. Error rate above 20%, budget stop, or too few cases to reach significance → `NOT_ENOUGH_EVIDENCE`.
-8. Multi-turn: replay only up to each decision point. Later logged user turns are never replayed against a new model's replies.
+6. Escalation: a case with a lower candidate pass rate and raw p < 0.1 is re-run. Escalation only decides what to re-run, so it uses the raw p-value. If the suite as a whole is lower at p < 0.05, every case is re-run.
+7. Confirmation happens only on fresh data: N new candidate runs, against the pooled baseline plus N new baseline runs. A case is `confirmed` when the fresh candidate rate is lower with one-sided Fisher p < 0.1 / (number of escalated cases). The suite is confirmed when a one-sided permutation test on the fresh differences gives p < 0.05.
+8. Verdicts: any confirmed case or confirmed suite drop → `REGRESSED`. Check-result, tool or token differences beyond the measured noise with no confirmed drop → `CHANGED`. Clean → `NO_CHANGE_DETECTED`. Error rate above 20% on either side, a budget stop that left needed work undone, or fewer than 6 usable cases → `NOT_ENOUGH_EVIDENCE`.
+9. Multi-turn: replay only up to each decision point. Later logged user turns are never replayed against a new model's replies.
 
-Seeded and noise targets: false alarms under 5% on model versus itself; at least 80% of seeded regressions caught. `e2e/stats-calibration.test.ts` simulates these with the mock provider.
+Seeded and noise targets: false alarms under 5% on model versus itself; at least 80% of seeded regressions caught. `e2e/stats-calibration.test.ts` simulates these with the mock provider. In the current calibration false alarms are 0.5–2.2% and seeded regressions are caught 93–100% of the time. The known weak spot is a single 0.6 pass-rate drop in a 10-case suite, caught about 74% of the time.
 
 ## Registry
 

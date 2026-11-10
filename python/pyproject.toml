@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "swapcheck"
+version = "0.1.0"
+description = "Know when your hosted LLM model is changing, find what to move to, and prove the move on your own cases."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.9"
+dependencies = []
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Topic :: Software Development :: Testing",
+]
+
+[project.urls]
+Homepage = "https://github.com/allthingsN/swapcheck"
+Issues = "https://github.com/allthingsN/swapcheck/issues"
+
+[project.scripts]
+swapcheck = "swapcheck._cli:main"
+
+[tool.setuptools]
+packages = ["swapcheck"]
+
+[tool.setuptools.package-data]
+swapcheck = ["py.typed", "_bin/*"]

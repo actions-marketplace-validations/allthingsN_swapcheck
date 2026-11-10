@@ -1,0 +1,78 @@
+{
+  "_comment": "DEVELOPMENT FIXTURE ONLY. Used by site/build.mjs when data/registry.snapshot.json is missing. The build refuses this file in CI. The fixture-model-* rows are fake and exist to exercise the layout.",
+  "version": 1,
+  "generated_at": "2026-11-09T00:00:00Z",
+  "models": [],
+  "events": [
+    {
+      "id": "fixture-1",
+      "type": "retirement",
+      "provider": "anthropic",
+      "route": "anthropic-api",
+      "model": "claude-sonnet-4-5-20250929",
+      "effective": "2026-11-30",
+      "date_precision": "exact",
+      "source": "https://docs.anthropic.com/en/docs/about-claude/model-deprecations",
+      "confidence": "high",
+      "first_seen": "2026-11-09",
+      "last_verified": "2026-11-09"
+    },
+    {
+      "id": "fixture-2",
+      "type": "reroute",
+      "provider": "google",
+      "route": "google-ai-studio",
+      "model": "gemini-2.5-pro",
+      "to": "gemini-3.8-flash",
+      "effective": "2026-12-01",
+      "date_precision": "exact",
+      "billing": "replacement_rates",
+      "successor_basis": "provider_named",
+      "source": "https://ai.google.dev/gemini-api/docs/deprecations",
+      "confidence": "high",
+      "first_seen": "2026-11-09",
+      "last_verified": "2026-11-09"
+    },
+    {
+      "id": "fixture-3",
+      "type": "parameter_change",
+      "provider": "anthropic",
+      "route": "anthropic-api",
+      "model": "anthropic-version 2026-10-21",
+      "effective": "2026-10-21",
+      "date_precision": "exact",
+      "params": ["temperature", "top_p", "top_k"],
+      "source": "https://docs.anthropic.com/en/release-notes/api",
+      "confidence": "high",
+      "first_seen": "2026-11-09",
+      "last_verified": "2026-11-09"
+    },
+    {
+      "id": "fixture-4",
+      "type": "price_change",
+      "provider": "fixture-provider",
+      "route": "fixture-api",
+      "model": "fixture-model-a",
+      "effective": "2027-02-15",
+      "date_precision": "estimated",
+      "source": "https://example.com/fixture",
+      "confidence": "low",
+      "first_seen": "2026-11-09",
+      "last_verified": "2026-11-09",
+      "notes": "Fake row for local layout testing."
+    },
+    {
+      "id": "fixture-5",
+      "type": "alias_move",
+      "provider": "fixture-provider",
+      "route": "fixture-api",
+      "model": "fixture-model-b-with-a-very-long-identifier-latest",
+      "to": "fixture-model-c",
+      "source": "https://example.com/fixture",
+      "confidence": "medium",
+      "first_seen": "2026-11-09",
+      "last_verified": "2026-11-09",
+      "notes": "Fake row for local layout testing."
+    }
+  ]
+}

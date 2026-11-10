@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "generated_at": "2026-11-08T00:00:00Z",
+  "events": [],
+  "models": [
+    { "id": "base-model", "provider": "acme", "route": "acme-api", "name": "Base", "status": "active", "capabilities": { "tools": true, "structured_output": true, "reasoning": false, "vision": false, "audio": false, "pdf": false }, "limit": { "context": 100000, "output": 4096 }, "cost": { "input": 1, "output": 2 }, "license": "commercial", "region": ["us"], "source": "fixture" },
+    { "id": "cand-model", "provider": "acme", "route": "acme-api", "name": "Candidate", "status": "active", "capabilities": { "tools": true, "structured_output": true, "reasoning": false, "vision": false, "audio": false, "pdf": false }, "limit": { "context": 100000, "output": 4096 }, "cost": { "input": 1, "output": 2 }, "license": "commercial", "region": ["us"], "source": "fixture" },
+    { "id": "cand-b", "provider": "acme", "route": "acme-api", "name": "Candidate B", "status": "active", "capabilities": { "tools": true, "structured_output": true, "reasoning": false, "vision": false, "audio": false, "pdf": false }, "limit": { "context": 100000, "output": 4096 }, "cost": { "input": 1, "output": 2 }, "license": "commercial", "region": ["us"], "source": "fixture" },
+    { "id": "other-vendor", "provider": "othercorp", "route": "other-api", "name": "Other", "status": "active", "capabilities": { "tools": true, "structured_output": true, "reasoning": false, "vision": false, "audio": false, "pdf": false }, "limit": { "context": 100000, "output": 4096 }, "cost": { "input": 1, "output": 50 }, "license": "open", "region": ["eu"], "source": "fixture" },
+    { "id": "judge-model", "provider": "acme", "route": "acme-api", "name": "Judge", "status": "active", "capabilities": { "tools": false, "structured_output": true, "reasoning": false, "vision": false, "audio": false, "pdf": false }, "limit": { "context": 100000, "output": 4096 }, "cost": { "input": 0.1, "output": 0.1 }, "source": "fixture" }
+  ]
+}

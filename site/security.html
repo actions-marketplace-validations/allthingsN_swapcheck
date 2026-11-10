@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- @head title="Security" description="The Swapcheck threat model in plain language: it runs locally, tool calls are mocked and never executed, the registry is signed, releases use OIDC, and there is no telemetry." -->
+<script type="module" src="assets/js/site.js"></script>
+</head>
+<body>
+<!-- @header -->
+<main id="main">
+  <section class="page-hero">
+    <div class="wrap">
+      <h1>Security</h1>
+      <p class="sec__intro">Swapcheck reads your source code and holds your provider keys while it runs, so it should be held to a high standard. Here is what it does, what it refuses to do, and what it cannot protect you from.</p>
+    </div>
+  </section>
+
+  <div class="wrap docs">
+    <nav class="docs__toc" aria-label="On this page">
+      <ol>
+        <li><a href="#local">Runs locally</a></li>
+        <li><a href="#telemetry">No telemetry</a></li>
+        <li><a href="#keys">Your keys</a></li>
+        <li><a href="#tools">Tool calls</a></li>
+        <li><a href="#untrusted">Untrusted input</a></li>
+        <li><a href="#ci">In your CI</a></li>
+        <li><a href="#registry">Signed registry</a></li>
+        <li><a href="#releases">Releases</a></li>
+        <li><a href="#spend">Spending</a></li>
+        <li><a href="#limits">Limits</a></li>
+        <li><a href="#report">Report a bug</a></li>
+      </ol>
+    </nav>
+    <article class="prose docs__body">
+      <h2 id="local">It runs on your machine</h2>
+      <p>There is no Swapcheck server, account or hosted service. It runs from the command line or in your own CI. It makes exactly three kinds of network call:</p>
+      <ul>
+        <li>a fetch of the public registry snapshot and its signature,</li>
+        <li>calls to the model providers you configure, when you run a command that spends,</li>
+        <li>GitHub API calls when you ask <code>bump</code> to open a pull request.</li>
+      </ul>
+      <p>When you test, your case content goes to the providers you chose to test. Each run lists those vendors first, and your policy file can restrict them. Reports store case hashes and scores, not your prompts, unless you opt in to including text.</p>
+
+      <h2 id="telemetry">No telemetry</h2>
+      <p>No usage data, crash reports or analytics of any kind, and no switch to turn any on. This website has no trackers or third-party scripts either.</p>
+
+      <h2 id="keys">Your keys</h2>
+      <p>API keys are read from environment variables only and are not written to config or lock files. All logs, errors and reports pass through a redaction step before they are shown or saved.</p>
+
+      <h2 id="tools">Tool calls are mocked and never executed</h2>
+      <p>When a model asks to call a tool during a test, Swapcheck records the request and compares it. It never runs it. Replays feed back a mocked result, and only where your case supplies one. A model under test cannot send an email, write to a database or issue a refund through Swapcheck.</p>
+
+      <h2 id="untrusted">Everything it reads is treated as data</h2>
+      <p>Source files, cases, prompts, model output and registry entries are all untrusted input.</p>
+      <ul>
+        <li>Nothing found in them is executed. Swapcheck does not use <code>eval</code> or shell strings.</li>
+        <li>Paths must stay inside your project. Symlinks that escape are refused.</li>
+        <li>File sizes, response bodies and finding counts are capped.</li>
+        <li>Regular expressions from user data are length-limited and protected against runaway matching.</li>
+      </ul>
+
+      <h2 id="ci">In your CI</h2>
+      <p>Text from models, cases and registries is escaped before it reaches workflow commands, step summaries or pull requests, so it cannot inject commands or markup. Pull requests from forks get the free scan only, and paid modes run only on <code>pull_request</code>, <code>push</code>, <code>schedule</code>, <code>workflow_dispatch</code>, <code>merge_group</code> and <code>release</code>. They refuse every other trigger, including <code>pull_request_target</code>, <code>workflow_run</code> and <code>issue_comment</code>, so a fork cannot spend your money.</p>
+
+      <h2 id="registry">The registry is signed</h2>
+      <p>The client verifies each snapshot with an Ed25519 signature against a public key pinned in the client. A snapshot that fails verification is never parsed. Swapcheck falls back to a cached copy, which is verified the same way, or to the snapshot bundled in the release. Reports state the snapshot date and warn when it is more than 7 days old.</p>
+
+      <h2 id="releases">Releases</h2>
+      <p>npm and PyPI packages are published from GitHub Actions through OIDC trusted publishing, with provenance, so no long-lived publishing token exists to steal. The published npm package has no runtime dependencies.</p>
+
+      <h2 id="spend">Spending</h2>
+      <p>Every paid command works out the worst-case cost first, including retries. Off a terminal it refuses to spend without <code>--yes</code>. The limit you set is a hard stop, and when it is reached the verdict is <code>NOT_ENOUGH_EVIDENCE</code>.</p>
+
+      <h2 id="limits">What this does not protect you from</h2>
+      <ul>
+        <li>A compromised machine or CI runner can read your keys, as with any tool that uses them.</li>
+        <li>Your case content is sent to the providers you test against, under their terms.</li>
+        <li>The registry is only as accurate as what providers announce. A silent, unannounced change will not appear on it.</li>
+        <li>Trace imports are redacted by pattern, which can miss things. Review them, and treat <code>--allow-unredacted</code> with care.</li>
+        <li><code>NO_CHANGE_DETECTED</code> means nothing moved on your cases. It does not mean the model is safe.</li>
+      </ul>
+
+      <h2 id="report">Report a vulnerability</h2>
+      <p>Please report privately through <a href="https://github.com/allthingsN/swapcheck/security/advisories/new" rel="noopener noreferrer">GitHub's security advisories</a>, and do not open a public issue. Include what you found, how to reproduce it, and the version. The goal is to acknowledge a report within three working days and say what will happen within ten. This is a very small team, so those are goals and not guarantees. Only the latest release receives security fixes. For a problem with registry data or signing, use the advisories on <a href="https://github.com/allthingsN/swapcheck-registry/security/advisories/new" rel="noopener noreferrer">the registry repository</a>.</p>
+    </article>
+  </div>
+</main>
+<!-- @footer -->
+</body>
+</html>

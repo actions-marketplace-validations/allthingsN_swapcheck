@@ -1,0 +1,57 @@
+name: Swapcheck
+description: Know when your hosted LLM model is changing, find what to move to, and prove the move on your own cases.
+author: allthingsN
+branding:
+  icon: refresh-cw
+  color: blue
+
+inputs:
+  mode:
+    description: "What to do: watch, check, find or bump."
+    required: false
+    default: watch
+  models:
+    description: Models to act on, comma or newline separated. Defaults to what the scan finds.
+    required: false
+  candidates:
+    description: Models to compare against in check mode, or targets in bump mode.
+    required: false
+  cases:
+    description: Folder of cases, relative to the working directory. Defaults to the config value.
+    required: false
+  runs:
+    description: Runs per case in check mode. Defaults to the config value.
+    required: false
+  max-usd:
+    description: The most this job may spend. Required in check mode, which spends nothing without it.
+    required: false
+  fail-within-days:
+    description: Fail when a change takes effect within this many days. Defaults to the config value.
+    required: false
+  open-prs:
+    description: In bump mode, open one pull request per model. Needs GITHUB_TOKEN in the step's env.
+    required: false
+    default: "false"
+  registry-url:
+    description: Registry snapshot URL. Defaults to the public signed registry.
+    required: false
+  working-directory:
+    description: Project folder, relative to the workspace.
+    required: false
+    default: "."
+
+outputs:
+  verdict:
+    description: The outcome, such as NO_CHANGE_DETECTED, CHANGED, REGRESSED, NOT_ENOUGH_EVIDENCE, CHANGES_DUE, NO_CHANGES_DUE, SKIPPED or FORK_SCAN_ONLY.
+  changes-due:
+    description: How many models have a change inside the window.
+  report-path:
+    description: Saved report, relative to the workspace.
+  spent-usd:
+    description: Dollars spent by this step.
+  recommended-model:
+    description: The shortlist's first entry in find mode, or the cheapest candidate with no change detected in check mode.
+
+runs:
+  using: node24
+  main: action-dist/index.mjs

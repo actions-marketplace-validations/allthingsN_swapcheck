@@ -1,0 +1,7 @@
+[extend]
+useDefault = true
+
+# Tests use fake keys to prove that redaction works. None of them is a real credential.
+[[allowlists]]
+description = "Fake keys in redaction tests"
+paths = ['''^test/engine/providers\.test\.ts$''', '''^test/security/audit\.test\.ts$''']

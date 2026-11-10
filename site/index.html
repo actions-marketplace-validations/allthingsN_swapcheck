@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- @head title="Swapcheck: every check passed, the model changed anyway" description="Hosted LLM models get retired, re-routed and repriced while your code and CI stay green. Swapcheck tells you what is changing and when, tests what you could move to on your own cases, and opens a PR with the evidence. Free, Apache-2.0, no telemetry." -->
+<script type="module" src="assets/js/site.js"></script>
+<script type="module" src="assets/js/home.js"></script>
+</head>
+<body>
+<!-- @header -->
+<svg class="defs" aria-hidden="true" focusable="false" width="0" height="0"><symbol id="i-check" viewBox="0 0 16 16"><path d="M2.5 8.6 6.3 12.4 13.6 4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square"/></symbol></svg>
+
+<main id="main">
+
+<section class="hero" aria-labelledby="hero-title">
+  <div class="wrap">
+    <h1 class="hero__title" id="hero-title">Every check passed. <span>The model changed anyway.</span></h1>
+    <div class="hero__row">
+      <p class="hero__lead">Model IDs are not in a lockfile. A hosted model can be retired, re-routed or repriced while your code and CI stay green. Swapcheck scans your repo, tells you what is changing and when, tests what you could move to on your own cases, and opens a PR with the evidence.</p>
+      <div class="hero__cmd" data-copy-root>
+        <div class="cmdbar"><span class="cmdbar__p" aria-hidden="true">$</span><code>npx swapcheck</code><button class="copybtn" type="button" data-copy="npx swapcheck" hidden>Copy</button></div>
+        <p class="hero__alt">or <code>uvx swapcheck</code>. Needs no keys and spends nothing to scan.</p>
+      </div>
+    </div>
+
+    <figure class="hero-fig" id="hero-fig" aria-labelledby="hero-cap">
+      <div class="board" role="img" aria-label="A CI pipeline with five checks runs twice and passes every time. Between the two runs the date moves from 2026-11-30 to 2026-12-01 and the provider starts answering requests for gemini-2.5-pro with gemini-3.8-flash. The code and the checks did not change.">
+        <div class="board__top">
+          <div class="board__cell board__cell--repo">
+            <span class="lbl">Your repo</span>
+            <code class="repo-line">model = "gemini-2.5-pro"</code>
+            <span class="diffstat">git diff: 0 files changed</span>
+          </div>
+          <div class="board__cell board__cell--run"><span class="lbl">CI run</span><flap id="hero-run" from="1" to="2" class="flap--mid"/></div>
+          <div class="board__cell board__cell--date"><span class="lbl">Date</span><flap id="hero-date" from="2026-11-30" to="2026-12-01" class="flap--mid"/></div>
+        </div>
+
+        <div class="ci">
+          <div class="ci__track"><span class="ticket"><span>gemini-2.5-pro</span></span></div>
+          <ol class="ci__rail">
+            <li class="check on"><span class="check__i"><svg width="14" height="14"><use href="#i-check"/></svg></span>lint</li>
+            <li class="check on"><span class="check__i"><svg width="14" height="14"><use href="#i-check"/></svg></span>types</li>
+            <li class="check on"><span class="check__i"><svg width="14" height="14"><use href="#i-check"/></svg></span>unit</li>
+            <li class="check on"><span class="check__i"><svg width="14" height="14"><use href="#i-check"/></svg></span>e2e</li>
+            <li class="check on"><span class="check__i"><svg width="14" height="14"><use href="#i-check"/></svg></span>deploy</li>
+          </ol>
+          <span class="ci__count on">5 of 5 green</span>
+        </div>
+
+        <div class="wall"><span>Provider side. Your CI cannot see past this line.</span></div>
+
+        <div class="served">
+          <div class="served__cell"><span class="lbl">You asked for</span><flap to="gemini-2.5-pro" class="flap--big"/></div>
+          <span class="served__ne hero-late on" aria-hidden="true">≠</span>
+          <div class="served__cell"><span class="lbl">It answered with</span><flap id="hero-served" from="gemini-2.5-pro" to="gemini-3.8-flash" class="flap--big"/></div>
+          <div class="served__cell served__cell--status"><span class="lbl">Status</span><flap id="hero-status" from="AS ASKED" to="RE-ROUTED" class="flap--big flap--amber"/></div>
+        </div>
+        <p class="served__rate hero-late on">Billed at the replacement's rates. Calls keep succeeding.</p>
+      </div>
+      <figcaption class="figcap" id="hero-cap">
+        <span><strong>A real change, dated.</strong> On 2026-12-01 <code>gemini-2.5-pro</code> re-routes to <code>gemini-3.8-flash</code>. Nothing fails, so nothing tells you.</span>
+        <button class="replay" type="button" data-replay hidden>Replay</button>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="sec sec--tight" aria-labelledby="board-title">
+  <div class="wrap grid">
+    <header class="sec__head">
+      <span class="sec__no">Now showing</span>
+      <h2 id="board-title">Dated changes, none of them in your diff</h2>
+    </header>
+    <div class="sec__body">
+      <div class="dep-board">
+        <table class="dep dep--static" role="table">
+          <caption class="sr-only">Three real model changes with their dates and effects</caption>
+          <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Date</th><th scope="col" role="columnheader">Model or API</th><th scope="col" role="columnheader">Change</th><th scope="col" role="columnheader">What happens</th></tr></thead>
+          <tbody role="rowgroup">
+            <tr class="dep__row" role="row">
+              <td class="dep__when" role="cell" data-label="Date"><time datetime="2026-11-30">2026-11-30</time><span class="dep__prec"><days-until date="2026-11-30"/></span></td>
+              <td class="dep__model" role="cell" data-label="Model"><code>claude-sonnet-4-5-20250929</code></td>
+              <td class="dep__what" role="cell" data-label="Change"><span class="tag tag--retirement">Retires</span></td>
+              <td class="dep__eff" role="cell" data-label="Effect">Requests fail.</td>
+            </tr>
+            <tr class="dep__row" role="row">
+              <td class="dep__when" role="cell" data-label="Date"><time datetime="2026-12-01">2026-12-01</time><span class="dep__prec"><days-until date="2026-12-01"/></span></td>
+              <td class="dep__model" role="cell" data-label="Model"><code>gemini-2.5-pro</code><span class="dep__to"><span aria-hidden="true">→</span><span class="sr-only">to</span> <code>gemini-3.8-flash</code></span></td>
+              <td class="dep__what" role="cell" data-label="Change"><span class="tag tag--reroute">Re-routes</span></td>
+              <td class="dep__eff" role="cell" data-label="Effect">Calls keep succeeding on a different model, at the replacement's rates.</td>
+            </tr>
+            <tr class="dep__row" role="row">
+              <td class="dep__when" role="cell" data-label="Date"><time datetime="2026-10-21">2026-10-21</time><span class="dep__prec"><days-until date="2026-10-21"/></span></td>
+              <td class="dep__model" role="cell" data-label="API"><code>anthropic-version: 2026-10-21</code></td>
+              <td class="dep__what" role="cell" data-label="Change"><span class="tag tag--parameter_change">Parameters</span></td>
+              <td class="dep__eff" role="cell" data-label="Effect"><code>temperature</code>, <code>top_p</code> and <code>top_k</code> removed. Requests using them return 400s.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="more"><a class="arrowlink" href="calendar.html">See every upcoming change on the calendar</a></p>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="how" aria-labelledby="how-title">
+  <div class="wrap">
+    <header class="sec__head sec__head--wide">
+      <span class="sec__no">How it works</span>
+      <h2 id="how-title">From an announcement to a pull request</h2>
+      <p class="sec__intro">One line, five stops. Only <code>test</code> spends money, and it shows you the maximum first.</p>
+    </header>
+    <figure class="line-fig" id="line-fig" aria-labelledby="line-cap">
+      <div class="line" role="img" aria-label="Registry events feed a line with five stops: scan, watch, find, test, bump. A pulse of data travels along the line and ends at a pull request with evidence attached.">
+        <div class="line__rail" aria-hidden="true"><span class="line__fill"></span><span class="train"><i></i></span></div>
+        <ol class="stops">
+          <li class="stop stop--term on">
+            <span class="stop__dot"></span>
+            <h3>Registry</h3>
+            <p>A free, signed list of what providers announced, with a source link for each entry.</p>
+            <ul class="evs" aria-hidden="true">
+              <li class="ev ev--retirement on"><b>retires</b> claude-sonnet-4-5-20250929</li>
+              <li class="ev ev--reroute on"><b>re-routes</b> gemini-2.5-pro</li>
+              <li class="ev ev--parameter_change on"><b>400s</b> temperature, top_p, top_k</li>
+            </ul>
+          </li>
+          <li class="stop on"><span class="stop__dot"></span><h3><code>scan</code></h3><p>Finds model IDs in TS, JS, Python and config. Writes <code>models.lock</code>.</p></li>
+          <li class="stop on"><span class="stop__dot"></span><h3><code>watch</code></h3><p>Compares the lock to the registry. Fails CI inside your window.</p></li>
+          <li class="stop on"><span class="stop__dot"></span><h3><code>find</code></h3><p>Shortlists models that do what your calls do and your policy allows.</p></li>
+          <li class="stop on"><span class="stop__dot"></span><h3><code>test</code></h3><p>Repeated runs on your cases, compared against noise.</p></li>
+          <li class="stop on"><span class="stop__dot"></span><h3><code>bump</code></h3><p>Edits the IDs, drops parameters the target rejects.</p></li>
+          <li class="stop stop--term on">
+            <span class="stop__dot"></span>
+            <h3>Pull request</h3>
+            <div class="pr on" aria-hidden="true">
+              <span class="pr__state">Open</span>
+              <span class="pr__title">Move off gemini-2.5-pro</span>
+              <span class="pr__ev">Evidence report attached, limits listed</span>
+            </div>
+          </li>
+        </ol>
+      </div>
+      <figcaption class="figcap" id="line-cap">
+        <span>One command per stop. Plain <code>swapcheck</code> runs the scan. The GitHub Action can run them on a schedule.</span>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="sec sec--tint" id="find" aria-labelledby="find-title">
+  <div class="wrap grid">
+    <header class="sec__head">
+      <span class="sec__no"><code>find</code></span>
+      <h2 id="find-title">Many models in. Five out. One tested.</h2>
+      <p class="sec__intro">The registry can tell you what exists. Only your cases can tell you what works for you, so the shortlist is where the listing stops and the testing starts.</p>
+    </header>
+    <div class="sec__body">
+      <figure class="funnel-fig" id="funnel-fig" aria-labelledby="funnel-cap">
+        <div class="funnel" role="img" aria-label="A row of 64 models narrows to 38 that have the capabilities your calls use, 17 your policy allows, 11 not retiring themselves, and a shortlist of five. Testing the five on your cases leaves one with no change detected.">
+          <!-- @funnel -->
+        </div>
+        <figcaption class="figcap" id="funnel-cap">
+          <span>Tick counts and verdicts are illustrative. Your shortlist depends on the registry and your policy.</span>
+          <button class="replay" type="button" data-replay hidden>Replay</button>
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="stats" aria-labelledby="stats-title">
+  <div class="wrap grid">
+    <header class="sec__head">
+      <span class="sec__no"><code>test</code></span>
+      <h2 id="stats-title">A difference has to survive the maths, then happen again</h2>
+      <p class="sec__intro">The same prompt gives different answers from one run to the next, so one run of each model proves nothing.</p>
+      <ol class="method">
+        <li>Run each case several times on both models.</li>
+        <li>Test each case with Fisher's exact test, then correct across the suite with Benjamini-Hochberg.</li>
+        <li>Re-run anything flagged on a fresh sample. A drop that does not repeat does not count.</li>
+      </ol>
+    </header>
+    <div class="sec__body">
+      <figure class="stats-fig" id="stats-fig" aria-labelledby="stats-cap">
+        <div class="seg" role="group" aria-label="Choose an example" hidden>
+          <button type="button" class="seg__b" data-scenario="regressed" aria-pressed="true" hidden>A drop that repeats</button>
+          <button type="button" class="seg__b" data-scenario="noise" aria-pressed="false" hidden>Noise that does not</button>
+        </div>
+        <div class="stats" role="img" aria-label="Eight test cases, each run five times on the baseline and five times on the candidate. Filled dots passed, hollow dots failed. In the first example, one case passes five of five on the baseline and none on the candidate, is flagged, and on a fresh re-run passes one of five, so the verdict is regressed.">
+          <!-- @stats -->
+          <div class="st__foot">
+            <p class="st__legend"><i class="dot dot--b is-pass on"></i>passed <i class="dot dot--b is-fail on"></i>failed. Each dot is one run.</p>
+          </div>
+        </div>
+        <div class="st__verdict" data-tone="bad">
+          <span class="lbl">Verdict</span>
+          <flap id="stat-verdict" to="REGRESSED" pad="19" class="flap--verdict"/>
+          <p class="st__note on" aria-live="polite">refund-policy fell from 5 of 5 to 0 of 5 (p = 0.008, q = 0.063), then passed 1 of 5 on a fresh sample (p = 0.024). The drop happened twice, so it counts. Exit code 1.</p>
+        </div>
+        <figcaption class="figcap" id="stats-cap">
+          <span>The runs are illustrative. The p and q values are what Swapcheck's statistics module returns for these counts.</span>
+          <button class="replay" type="button" data-replay hidden>Replay</button>
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec--tint" id="verdicts" aria-labelledby="verdicts-title">
+  <div class="wrap grid">
+    <header class="sec__head">
+      <span class="sec__no">Verdicts</span>
+      <h2 id="verdicts-title">Four verdicts. None of them is "safe".</h2>
+      <p class="sec__intro">Swapcheck only knows what your cases cover. A clean result means nothing moved on those cases, at that sample size, on that day.</p>
+    </header>
+    <div class="sec__body">
+      <dl class="verdicts">
+        <div class="vd vd--ok"><dt><span class="vd__flap"><flap to="NO CHANGE DETECTED" class="flap--list"/></span></dt><dd>Nothing differed beyond noise on your cases. It is not a guarantee about anything your cases do not test.<span class="vd__code">exit 0</span></dd></div>
+        <div class="vd vd--warn"><dt><span class="vd__flap"><flap to="CHANGED" class="flap--list"/></span></dt><dd>Check results, tool calls or token use moved beyond noise, with no confirmed drop in pass rate. Read the report and decide.<span class="vd__code">exit 0</span></dd></div>
+        <div class="vd vd--bad"><dt><span class="vd__flap"><flap to="REGRESSED" class="flap--list"/></span></dt><dd>At least one case dropped, and dropped again on a fresh sample. CI fails.<span class="vd__code">exit 1</span></dd></div>
+        <div class="vd vd--none"><dt><span class="vd__flap"><flap to="NOT ENOUGH EVIDENCE" class="flap--list"/></span></dt><dd>Over 20% of calls failed, the budget ran out, or there were fewer than six usable cases. It will not guess.<span class="vd__code">exit 3</span></dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec--board" id="run" aria-labelledby="run-title">
+  <div class="wrap grid">
+    <header class="sec__head">
+      <span class="sec__no">The commands</span>
+      <h2 id="run-title">What it looks like on your screen</h2>
+      <p class="sec__intro">Scanning, watching and finding are free. Testing spends your provider credit, after showing the most it could cost.</p>
+    </header>
+    <div class="sec__body">
+      <figure class="term-fig" id="term-fig" aria-labelledby="term-cap">
+        <div class="term" role="group" aria-label="Terminal replay of Swapcheck commands">
+          <div class="term__bar" aria-hidden="true">your-repo</div>
+          <div class="term__body">
+            <div class="l cmd on"><span class="pr1" aria-hidden="true">$ </span><code>npx swapcheck</code></div>
+            <div class="l on">Scanned 214 files. Found 2 models.</div>
+            <div class="l d on">Registry: 2026-11-09 (remote)</div>
+            <div class="l blank on"></div>
+            <div class="l on">  <b>claude-sonnet-4-5-20250929</b>  <em class="y">retires 2026-11-30, in 21 days</em></div>
+            <div class="l d on">    src/agents/planner.ts:14  src/agents/review.ts:9</div>
+            <div class="l d on">    source: https://docs.anthropic.com/en/docs/about-claude/model-deprecations</div>
+            <div class="l on">  <b>gemini-2.5-pro</b>  <em class="y">reroutes to gemini-3.8-flash 2026-12-01, in 22 days</em></div>
+            <div class="l d on">    app/summarize.py:31</div>
+            <div class="l d on">    source: https://ai.google.dev/gemini-api/docs/deprecations</div>
+            <div class="l blank on"></div>
+            <div class="l on">2 of 2 models have a change in the registry.</div>
+            <div class="l d on">Wrote models.lock.</div>
+            <div class="l blank on"></div>
+            <div class="l cmd on"><span class="pr1" aria-hidden="true">$ </span><code>npx swapcheck watch --fail-within-days 30</code></div>
+            <div class="l on">Watching 2 models from models.lock.</div>
+            <div class="l on"><em class="r">2 models changing within 30 days.</em></div>
+            <div class="l d on"># exit code 1</div>
+            <div class="l blank on"></div>
+            <div class="l cmd on"><span class="pr1" aria-hidden="true">$ </span><code>npx swapcheck test --to example-model-a,example-model-b</code></div>
+            <div class="l on">Spend up to $4.20? [y/N] y</div>
+            <div class="l on">Compared claude-sonnet-4-5-20250929 on 24 cases, 5 runs each.</div>
+            <div class="l d on">Noise: model against itself flagged 0 cases (false-change rate 0%).</div>
+            <div class="l blank on"></div>
+            <div class="l on">  <b>example-model-a</b>  <em class="r">Regressed</em></div>
+            <div class="l on">    1 of 24 cases passed less often on the candidate and the drop reproduced on a fresh sample.</div>
+            <div class="l on">  <b>example-model-b</b>  <em class="g">No change detected</em></div>
+            <div class="l on">    No difference beyond the measured noise was detected on the 24 cases tested. This covers only those cases.</div>
+            <div class="l blank on"></div>
+            <div class="l on">Spent $2.87 of a $4.20 limit.</div>
+            <div class="l on">Limits of this measurement:</div>
+            <div class="l d on">  - Only the behaviour these cases cover was measured.</div>
+            <div class="l blank on"></div>
+            <div class="l cmd on"><span class="pr1" aria-hidden="true">$ </span><code>npx swapcheck bump claude-sonnet-4-5-20250929 --to example-model-b --open-pr</code></div>
+            <div class="l on">Edited 2 places in 2 files. Opened a pull request with the report attached.</div>
+          </div>
+        </div>
+        <figcaption class="figcap" id="term-cap">
+          <span>Real commands, in the CLI's output format, shortened. The file names, costs and <code>example-model</code> results are made up for this replay.</span>
+          <button class="replay" type="button" data-replay hidden>Replay</button>
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="security" aria-labelledby="sec-title">
+  <div class="wrap grid">
+    <header class="sec__head">
+      <span class="sec__no">Security posture</span>
+      <h2 id="sec-title">It runs on your machine, with your keys</h2>
+      <p class="sec__intro">There is no Swapcheck server to send anything to. The only network calls are the registry fetch, your model providers, and the GitHub API when you ask for a PR.</p>
+      <p><a class="arrowlink" href="security.html">Read the threat model</a></p>
+    </header>
+    <div class="sec__body">
+      <dl class="manifest" aria-label="Security properties">
+        <div><dt>telemetry</dt><dd>none</dd></div>
+        <div><dt>hosted service</dt><dd>none</dd></div>
+        <div><dt>api keys</dt><dd>read from environment variables, redacted from all output</dd></div>
+        <div><dt>tool calls</dt><dd>recorded and mocked, never executed</dd></div>
+        <div><dt>scanned code</dt><dd>read as text, never run</dd></div>
+        <div><dt>registry</dt><dd>Ed25519 signed, public key pinned in the client</dd></div>
+        <div><dt>releases</dt><dd>published to npm and PyPI through OIDC</dd></div>
+        <div><dt>spending</dt><dd>maximum cost shown first; refused without <code>--yes</code> off a terminal</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec--tint" id="compare" aria-labelledby="cmp-title">
+  <div class="wrap">
+    <header class="sec__head sec__head--wide">
+      <span class="sec__no">Comparison</span>
+      <h2 id="cmp-title">Two other open-source tools do this well</h2>
+      <p class="sec__intro"><a href="https://github.com/imhammad/modelbump" rel="noopener noreferrer">ModelBump</a> and <a href="https://github.com/samarthputhraya/Modelpin" rel="noopener noreferrer">Modelpin</a> got here first, and both publish measured accuracy, which Swapcheck has not done yet. Read from their READMEs on 2026-11-09. Swapcheck can import suites from either.</p>
+    </header>
+    <div class="cmp-wrap">
+      <table class="cmp" role="table">
+        <caption class="sr-only">Swapcheck compared with ModelBump and Modelpin</caption>
+        <thead role="rowgroup"><tr role="row"><td role="cell"></td><th scope="col" role="columnheader">Swapcheck</th><th scope="col" role="columnheader">ModelBump</th><th scope="col" role="columnheader">Modelpin</th></tr></thead>
+        <tbody role="rowgroup">
+          <tr role="row"><th scope="row" role="rowheader">Pick it when</th><td role="cell" data-label="Swapcheck">You want every kind of provider change on one board, in TS or Python repos</td><td role="cell" data-label="ModelBump">You want Dependabot-style upgrades and prompts repaired for you</td><td role="cell" data-label="Modelpin">You want your app's real requests replayed and drift caught in CI</td></tr>
+          <tr role="row"><th scope="row" role="rowheader">Runs on</th><td role="cell" data-label="Swapcheck">Node 22 via <code>npx</code>; binary wheels via <code>uvx</code></td><td role="cell" data-label="ModelBump">Python 3.12+</td><td role="cell" data-label="Modelpin">Python 3.11+</td></tr>
+          <tr role="row"><th scope="row" role="rowheader">Watches for</th><td role="cell" data-label="Swapcheck">Retirements, re-routes, alias moves, prices, parameters, capabilities</td><td role="cell" data-label="ModelBump">Retirements</td><td role="cell" data-label="Modelpin">Retirements</td></tr>
+          <tr role="row"><th scope="row" role="rowheader">Registry updates</th><td role="cell" data-label="Swapcheck">Signed snapshot, fetched daily, bundled fallback</td><td role="cell" data-label="ModelBump">Registry of provider retirement dates</td><td role="cell" data-label="Modelpin">Ships inside each release; can point at a newer file</td></tr>
+          <tr role="row"><th scope="row" role="rowheader">Finds replacements</th><td role="cell" data-label="Swapcheck">Shortlist by capability, policy and retirement</td><td role="cell" data-label="ModelBump">Uses the replacement the registry suggests</td><td role="cell" data-label="Modelpin">Names the vendor's successor; you choose the candidate</td></tr>
+          <tr role="row"><th scope="row" role="rowheader">Statistics</th><td role="cell" data-label="Swapcheck">Fisher exact, Benjamini-Hochberg, must repeat on a fresh sample</td><td role="cell" data-label="ModelBump">Sequential tests or fixed runs, with Benjamini-Hochberg</td><td role="cell" data-label="Modelpin">Exact permutation test, minimum effect size, must repeat on fresh runs</td></tr>
+          <tr role="row"><th scope="row" role="rowheader">Repairs prompts</th><td role="cell" data-label="Swapcheck" class="no">No</td><td role="cell" data-label="ModelBump" class="yes">Yes, and verifies the fix</td><td role="cell" data-label="Modelpin" class="no">Not in its README</td></tr>
+          <tr role="row"><th scope="row" role="rowheader">Opens the PR</th><td role="cell" data-label="Swapcheck" class="yes">Yes</td><td role="cell" data-label="ModelBump" class="yes">Yes</td><td role="cell" data-label="Modelpin" class="no">No, by design</td></tr>
+          <tr role="row"><th scope="row" role="rowheader">Free local models</th><td role="cell" data-label="Swapcheck">Through OpenAI-compatible routes</td><td role="cell" data-label="ModelBump" class="yes">Ollama by default</td><td role="cell" data-label="Modelpin">Through OpenAI-compatible hosts</td></tr>
+          <tr role="row"><th scope="row" role="rowheader">MCP server</th><td role="cell" data-label="Swapcheck" class="yes">Yes</td><td role="cell" data-label="ModelBump" class="no">Not in its README</td><td role="cell" data-label="Modelpin" class="no">Not in its README</td></tr>
+          <tr role="row"><th scope="row" role="rowheader">Published accuracy</th><td role="cell" data-label="Swapcheck" class="no">Not yet</td><td role="cell" data-label="ModelBump" class="yes">Scanner, judge and repair results</td><td role="cell" data-label="Modelpin" class="yes">False-alarm and detection rates</td></tr>
+          <tr role="row"><th scope="row" role="rowheader">Licence</th><td role="cell" data-label="Swapcheck">Apache-2.0</td><td role="cell" data-label="ModelBump">Apache-2.0</td><td role="cell" data-label="Modelpin">Apache-2.0, open-core</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="install" aria-labelledby="install-title">
+  <div class="wrap grid">
+    <header class="sec__head">
+      <span class="sec__no">Install</span>
+      <h2 id="install-title">Nothing to sign up for</h2>
+      <p class="sec__intro">Run it once in a repo that calls a hosted model. It needs no keys and no config, and it spends nothing.</p>
+      <p><a class="arrowlink" href="docs.html#quickstart">Read the quickstart</a></p>
+    </header>
+    <div class="sec__body installs">
+      <div class="install" data-copy-root>
+        <h3>Node</h3>
+        <pre><code>npx swapcheck</code></pre>
+        <button class="copybtn" type="button" data-copy hidden>Copy</button>
+      </div>
+      <div class="install" data-copy-root>
+        <h3>Python</h3>
+        <pre><code>uvx swapcheck</code></pre>
+        <button class="copybtn" type="button" data-copy hidden>Copy</button>
+      </div>
+      <div class="install" data-copy-root>
+        <h3>GitHub Action</h3>
+        <pre><code>- uses: allthingsN/swapcheck@v1
+  with:
+    fail-within-days: 30</code></pre>
+        <button class="copybtn" type="button" data-copy hidden>Copy</button>
+      </div>
+      <div class="install" data-copy-root>
+        <h3>MCP server</h3>
+        <pre><code>{ "mcpServers": { "swapcheck": {
+  "command": "npx", "args": ["-y", "swapcheck", "mcp"]
+} } }</code></pre>
+        <button class="copybtn" type="button" data-copy hidden>Copy</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+<!-- @footer -->
+</body>
+</html>
