@@ -193,6 +193,8 @@ jobs:
 
   publish-pypi:
     needs: attest
+    # PyPI is off until its trusted publisher exists. Turn it on with the repository variable PUBLISH_PYPI=true.
+    if: vars.PUBLISH_PYPI == 'true'
     runs-on: ubuntu-24.04
     environment: release
     permissions:
@@ -210,6 +212,8 @@ jobs:
 
   github-release:
     needs: [publish-npm, publish-pypi]
+    # A skipped PyPI job is fine; a failed one still stops the release.
+    if: ${{ !cancelled() && needs.publish-npm.result == 'success' && contains(fromJSON('["success", "skipped"]'), needs.publish-pypi.result) }}
     runs-on: ubuntu-24.04
     environment: release
     permissions:
@@ -228,6 +232,7 @@ jobs:
 
   move-v1:
     needs: github-release
+    if: ${{ !cancelled() && needs.github-release.result == 'success' }}
     runs-on: ubuntu-24.04
     environment: release
     permissions:

@@ -16,7 +16,7 @@ Swapcheck is free and open source (Apache-2.0). It runs on your machine or in yo
 npx @allthingsai/swapcheck
 ```
 
-To keep it installed, run `npm install -g @allthingsai/swapcheck` and then use the `swapcheck` command. With Python, `uvx swapcheck` or `pip install swapcheck` gives the same tool.
+To keep it installed, run `npm install -g @allthingsai/swapcheck` and then use the `swapcheck` command. For Python, signed wheels for Linux, macOS (Apple silicon) and Windows are attached to each [release](https://github.com/allthingsN/swapcheck/releases/latest). They are not on PyPI yet.
 
 Real output on a small app that calls Claude Sonnet 4.5 (registry of 2026-11-10):
 
@@ -126,8 +126,10 @@ The free tools (`scan`, `watch`, `find`, `explain_event`) are always on. The pai
 
 ## Python
 
+Swapcheck is not on PyPI yet. Download the wheel for your platform from the [latest release](https://github.com/allthingsN/swapcheck/releases/latest) and install it:
+
 ```sh
-pip install swapcheck
+pip install ./swapcheck-*.whl
 ```
 
 ```python

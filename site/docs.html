@@ -31,7 +31,7 @@
     <article class="prose docs__body">
       <h2 id="quickstart">Quickstart</h2>
       <p>Run this in a repo that calls a hosted model. It needs no keys and no config, and it spends nothing.</p>
-      <pre><code>npx @allthingsai/swapcheck     # or: uvx swapcheck</code></pre>
+      <pre><code>npx @allthingsai/swapcheck</code></pre>
       <p>It finds model IDs in your code and config, shows which are changing with dates and source links, and writes <code>models.lock</code>. Commit that file. Then:</p>
       <pre><code># Fail CI when something changes within 30 days
 npx @allthingsai/swapcheck watch --fail-within-days 30

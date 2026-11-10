@@ -65,7 +65,7 @@
       <p>The client verifies each snapshot with an Ed25519 signature against a public key pinned in the client. A snapshot that fails verification is never parsed. Swapcheck falls back to a cached copy, which is verified the same way, or to the snapshot bundled in the release. Reports state the snapshot date and warn when it is more than 7 days old.</p>
 
       <h2 id="releases">Releases</h2>
-      <p>npm and PyPI packages are published from GitHub Actions through OIDC trusted publishing, with provenance, so no long-lived publishing token exists to steal. The published npm package has no runtime dependencies.</p>
+      <p>The npm package is built and published from GitHub Actions with provenance, and every release file carries a GitHub build attestation you can check with <code>gh attestation verify</code>. The first npm release needed a short-lived token, which is deleted once npm trusted publishing is set up. Python wheels are attached to each GitHub release and are not on PyPI yet. The published npm package has no runtime dependencies.</p>
 
       <h2 id="spend">Spending</h2>
       <p>Every paid command works out the worst-case cost first, including retries. Off a terminal it refuses to spend without <code>--yes</code>. The limit you set is a hard stop, and when it is reached the verdict is <code>NOT_ENOUGH_EVIDENCE</code>.</p>
