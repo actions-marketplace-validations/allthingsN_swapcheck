@@ -44,8 +44,12 @@ const PROJECT_MARKERS = [
  * a scan would read every file the user has. MCP clients often start servers in the home folder too.
  */
 export async function refuseBroadFolder(root: string, home: string = homedir()): Promise<void> {
-  const realHome = await realpath(home).catch(() => path.resolve(home));
-  const isHome = root === realHome;
+  // Resolve both sides the same way: Windows can spell one folder two ways (8.3 short names, letter case).
+  const canonical = async (folder: string) => {
+    const real = await realpath(folder).catch(() => path.resolve(folder));
+    return process.platform === "win32" ? real.toLowerCase() : real;
+  };
+  const isHome = (await canonical(root)) === (await canonical(home));
   const isDiskTop = path.dirname(root) === root;
   if (!isHome && !isDiskTop) return;
   for (const marker of PROJECT_MARKERS) {

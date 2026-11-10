@@ -13344,8 +13344,11 @@ var PROJECT_MARKERS = [
   "models.lock"
 ];
 async function refuseBroadFolder(root, home = homedir2()) {
-  const realHome = await realpath3(home).catch(() => path8.resolve(home));
-  const isHome = root === realHome;
+  const canonical = async (folder) => {
+    const real = await realpath3(folder).catch(() => path8.resolve(folder));
+    return process.platform === "win32" ? real.toLowerCase() : real;
+  };
+  const isHome = await canonical(root) === await canonical(home);
   const isDiskTop = path8.dirname(root) === root;
   if (!isHome && !isDiskTop) return;
   for (const marker of PROJECT_MARKERS) {
