@@ -8,7 +8,7 @@ import { findReplacements } from "../find.ts";
 import { lockFromExposure, readLock, writeLock } from "../lock.ts";
 import { exitCodeFor, renderMarkdown, renderSarifExposure, renderSarifReport } from "../report/index.ts";
 import { inferRequirements } from "../scan/requirements.ts";
-import { scanProject } from "../scan/scan.ts";
+import { scanProject, type ScanOptions } from "../scan/scan.ts";
 import { estimateMaxCost } from "../testing/budget.ts";
 import { EXIT, type FindResult, type ScanResult, type SwapReport } from "../types.ts";
 import { SwapcheckError } from "../util/errors.ts";
@@ -16,7 +16,7 @@ import { computeExposure, watchLock } from "../watch.ts";
 import { boolFlag, intFlag, parseUsd, splitList, stringFlag, type Format, type ParsedArgs } from "./args.ts";
 import { describePlan, planComparison, runPlan, type ComparisonPlan } from "./compare.ts";
 import { helpFor } from "./help.ts";
-import { clean, emit, emitJson, note, plural, type Styler } from "./output.ts";
+import { clean, emit, emitJson, note, plural, scanProgress, type Styler } from "./output.ts";
 import { openProject, resolveInsideProject, resolveRoot, type OpenOptions, type Project } from "./project.ts";
 import { renderExposureMarkdown, renderFindMarkdown, renderFindText, renderReportText, renderScanText, renderWatchText } from "./render.ts";
 import { confirmSpend } from "./spend.ts";
@@ -30,6 +30,16 @@ export interface Env {
   style: Styler;
   isTty: boolean;
   env: NodeJS.ProcessEnv;
+}
+
+/** Scans with a live file count on the terminal, so a large folder never looks frozen. */
+async function scanWithProgress(isTty: boolean, root: string, snapshot: Project["registry"]["snapshot"], options: ScanOptions): Promise<ScanResult> {
+  const progress = scanProgress(isTty);
+  try {
+    return await scanProject(root, snapshot, { ...options, onProgress: progress.onProgress });
+  } finally {
+    progress.done();
+  }
 }
 
 function openOptions(args: ParsedArgs, env: NodeJS.ProcessEnv, registryDeadlineMs?: number): OpenOptions {
@@ -52,9 +62,9 @@ function registryInfo(project: Project): { generated_at: string; age_days: numbe
   return { generated_at: project.registry.snapshot.generated_at, age_days: project.registry.age_days, source: project.registry.source };
 }
 
-export async function runScan({ args, style, env }: Env): Promise<number> {
+export async function runScan({ args, style, env, isTty }: Env): Promise<number> {
   const project = await openProject(openOptions(args, env, FREE_COMMAND_REGISTRY_DEADLINE_MS));
-  const scan = await scanProject(project.root, project.registry.snapshot, { exclude: project.config.exclude });
+  const scan = await scanWithProgress(isTty, project.root, project.registry.snapshot, { exclude: project.config.exclude });
   const items = computeExposure(scan, project.registry.snapshot);
   const lockWritten = !boolFlag(args, "no-lock");
   if (lockWritten) await writeLock(project.root, lockFromExposure(items, project.registry.snapshot, await readLock(project.root)));
@@ -162,7 +172,7 @@ export async function runFind(context: Env): Promise<number> {
   const testing = boolFlag(args, "test");
   refuseFormat(args.format, "find", testing ? ["text", "json", "markdown", "sarif"] : ["text", "json", "markdown"]);
   const project = await openProject(openOptions(args, env, testing ? undefined : FREE_COMMAND_REGISTRY_DEADLINE_MS));
-  const scan = await scanProject(project.root, project.registry.snapshot, { exclude: project.config.exclude });
+  const scan = await scanWithProgress(context.isTty, project.root, project.registry.snapshot, { exclude: project.config.exclude });
   const requirements = await inferRequirements(project.root, model, scan);
   const route = stringFlag(args, "route");
   const limit = intFlag(args, "limit", { min: 1, max: 50 }) ?? 5;
@@ -196,7 +206,7 @@ export async function runCases(context: Env): Promise<number> {
   let summary: string;
 
   if (action === "init") {
-    const scan = await scanProject(project.root, project.registry.snapshot, { exclude: project.config.exclude });
+    const scan = await scanWithProgress(context.isTty, project.root, project.registry.snapshot, { exclude: project.config.exclude });
     const out = await initCases(project.root, scan, project.config);
     result = { ...out };
     summary = `Wrote ${plural(out.cases, "case")} to ${plural(out.written.length, "file")}.${out.contract_only ? " These are contract checks only." : ""} Generated drafts do not run until you accept them.`;
@@ -260,7 +270,7 @@ export async function runBump(context: Env): Promise<number> {
   if (!target) note(style.yellow(`${clean(to, 120)} is not in the registry, so Swapcheck cannot check which parameters it rejects.`));
 
   // includeDocs surfaces comments and docs too, so they appear in the skipped list.
-  const scan: ScanResult = await scanProject(project.root, snapshot, { exclude: project.config.exclude, includeDocs: true });
+  const scan: ScanResult = await scanWithProgress(context.isTty, project.root, snapshot, { exclude: project.config.exclude, includeDocs: true });
   const plan = await planBump({ root: project.root, from, to, snapshot, scan });
   let pr: PublishedPr | null = null;
   if (!dryRun) {

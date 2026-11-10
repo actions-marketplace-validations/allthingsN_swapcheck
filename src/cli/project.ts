@@ -1,4 +1,5 @@
 import { realpath, stat } from "node:fs/promises";
+import { homedir } from "node:os";
 import path from "node:path";
 import { loadConfig } from "../config.ts";
 import { loadRegistry, type LoadedRegistry } from "../registry/client.ts";
@@ -32,11 +33,35 @@ function withDeadline(ms: number): typeof fetch {
   };
 }
 
+/** Files that mark a folder as a project, so a home folder kept under git or with a config is still scanned. */
+const PROJECT_MARKERS = [
+  ".git", "package.json", "pyproject.toml", "requirements.txt", "setup.py", "go.mod", "Cargo.toml", "pom.xml",
+  "build.gradle", "build.gradle.kts", "Gemfile", "composer.json", "swapcheck.yaml", "swapcheck.yml", "models.lock",
+];
+
+/**
+ * Refuses the home folder and the top of a disk unless they look like a project. Run from there by mistake,
+ * a scan would read every file the user has. MCP clients often start servers in the home folder too.
+ */
+export async function refuseBroadFolder(root: string, home: string = homedir()): Promise<void> {
+  const realHome = await realpath(home).catch(() => path.resolve(home));
+  const isHome = root === realHome;
+  const isDiskTop = path.dirname(root) === root;
+  if (!isHome && !isDiskTop) return;
+  for (const marker of PROJECT_MARKERS) {
+    if (await stat(path.join(root, marker)).catch(() => null)) return;
+  }
+  const where = isHome ? "your home folder" : "the top of the disk";
+  throw new SwapcheckError(`${root} is ${where}, not a project, so Swapcheck would read every file under it. Run it inside a project folder (cd into it first), or pass one with --cwd <folder>.`);
+}
+
 export async function resolveRoot(cwd: string | undefined): Promise<string> {
   const root = path.resolve(cwd ?? process.cwd());
   const info = await stat(root).catch(() => null);
   if (!info?.isDirectory()) throw new SwapcheckError(`The project folder ${root} does not exist. Check --cwd.`);
-  return realpath(root);
+  const real = await realpath(root);
+  await refuseBroadFolder(real);
+  return real;
 }
 
 /** Resolves a user-supplied file, refusing anything outside the project, including through symlinks. */

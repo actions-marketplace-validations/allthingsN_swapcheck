@@ -1175,6 +1175,7 @@ function scanFile(rel: string, type: FileType, source: string, out: Collector): 
 
 interface WalkState {
   count: number;
+  onProgress?: (filesRead: number) => void;
 }
 
 export interface ScanOptions {
@@ -1185,6 +1186,8 @@ export interface ScanOptions {
   fileTimeLimitMs?: number;
   /** Overrides the time allowed for the whole scan, in milliseconds. */
   scanTimeLimitMs?: number;
+  /** Called after each file is read, with the running count. */
+  onProgress?: (filesRead: number) => void;
 }
 
 async function walkDir(dir: string, rel: string, parentRules: IgnoreRule[], excludeRules: IgnoreRule[], depth: number, state: WalkState, out: Collector): Promise<void> {
@@ -1217,6 +1220,7 @@ async function walkDir(dir: string, rel: string, parentRules: IgnoreRule[], excl
     const source = await readTextFile(full);
     if (source === null) continue;
     state.count++;
+    state.onProgress?.(state.count);
     scanFile(childRel, type, source, out);
   }
 }
@@ -1248,7 +1252,7 @@ export async function scanProject(root: string, snapshot: RegistrySnapshot, opts
     scanStopped: false,
   };
   const excludeRules = (opts.exclude ?? []).slice(0, MAX_IGNORE_RULES).flatMap((line) => parseIgnoreRule(line, "") ?? []);
-  const state: WalkState = { count: 0 };
+  const state: WalkState = { count: 0, onProgress: opts.onProgress };
   await walkDir(realRoot, "", [], excludeRules, 0, state, out);
   out.findings.sort(compareFindings);
   out.unresolved.sort(compareFindings);

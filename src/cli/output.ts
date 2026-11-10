@@ -45,6 +45,26 @@ export function note(text: string): void {
   process.stderr.write(redactSecrets(text.endsWith("\n") ? text : `${text}\n`));
 }
 
+/** A file count on stderr while a long scan runs, cleared when it ends. Terminal only, and silent for quick scans. */
+export function scanProgress(enabled: boolean, write: (text: string) => void = (text) => process.stderr.write(text)): { onProgress?: (filesRead: number) => void; done: () => void } {
+  if (!enabled) return { done: () => {} };
+  const started = performance.now();
+  let lastShown = 0;
+  let shown = false;
+  return {
+    onProgress(filesRead) {
+      const now = performance.now();
+      if (now - started < 1500 || now - lastShown < 100) return;
+      lastShown = now;
+      shown = true;
+      write(`\rScanning: ${filesRead.toLocaleString("en-US")} files read. Press Ctrl+C to stop.`);
+    },
+    done() {
+      if (shown) write("\r\x1b[K");
+    },
+  };
+}
+
 export function emitJson(value: unknown): void {
   emit(JSON.stringify(value, null, 2));
 }

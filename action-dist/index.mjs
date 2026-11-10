@@ -9670,6 +9670,7 @@ async function walkDir(dir, rel, parentRules, excludeRules, depth, state, out) {
     const source = await readTextFile(full);
     if (source === null) continue;
     state.count++;
+    state.onProgress?.(state.count);
     scanFile(childRel, type, source, out);
   }
 }
@@ -9698,7 +9699,7 @@ async function scanProject(root, snapshot, opts = {}) {
     scanStopped: false
   };
   const excludeRules = (opts.exclude ?? []).slice(0, MAX_IGNORE_RULES).flatMap((line) => parseIgnoreRule(line, "") ?? []);
-  const state = { count: 0 };
+  const state = { count: 0, onProgress: opts.onProgress };
   await walkDir(realRoot, "", [], excludeRules, 0, state, out);
   out.findings.sort(compareFindings);
   out.unresolved.sort(compareFindings);
@@ -12043,7 +12044,7 @@ function resolveProvider(model, route, snapshot, env = process.env, fetchImpl) {
 import path6 from "node:path";
 
 // src/version.ts
-var VERSION = true ? "0.1.0" : "0.0.0-dev";
+var VERSION = true ? "0.1.1" : "0.0.0-dev";
 
 // src/report/index.ts
 var REPORTS_DIR = "swapcheck/reports";
@@ -12905,6 +12906,7 @@ async function runPlan(project, plan, onProgress) {
 
 // src/cli/project.ts
 import { realpath as realpath3, stat as stat5 } from "node:fs/promises";
+import { homedir as homedir2 } from "node:os";
 import path8 from "node:path";
 
 // src/config.ts
@@ -13324,11 +13326,41 @@ function withDeadline(ms) {
     return fetch(input, { ...init, signal });
   };
 }
+var PROJECT_MARKERS = [
+  ".git",
+  "package.json",
+  "pyproject.toml",
+  "requirements.txt",
+  "setup.py",
+  "go.mod",
+  "Cargo.toml",
+  "pom.xml",
+  "build.gradle",
+  "build.gradle.kts",
+  "Gemfile",
+  "composer.json",
+  "swapcheck.yaml",
+  "swapcheck.yml",
+  "models.lock"
+];
+async function refuseBroadFolder(root, home = homedir2()) {
+  const realHome = await realpath3(home).catch(() => path8.resolve(home));
+  const isHome = root === realHome;
+  const isDiskTop = path8.dirname(root) === root;
+  if (!isHome && !isDiskTop) return;
+  for (const marker of PROJECT_MARKERS) {
+    if (await stat5(path8.join(root, marker)).catch(() => null)) return;
+  }
+  const where = isHome ? "your home folder" : "the top of the disk";
+  throw new SwapcheckError(`${root} is ${where}, not a project, so Swapcheck would read every file under it. Run it inside a project folder (cd into it first), or pass one with --cwd <folder>.`);
+}
 async function resolveRoot(cwd) {
   const root = path8.resolve(cwd ?? process.cwd());
   const info = await stat5(root).catch(() => null);
   if (!info?.isDirectory()) throw new SwapcheckError(`The project folder ${root} does not exist. Check --cwd.`);
-  return realpath3(root);
+  const real = await realpath3(root);
+  await refuseBroadFolder(real);
+  return real;
 }
 async function resolveInsideProject(root, relative) {
   const target = insideRoot(root, relative);
