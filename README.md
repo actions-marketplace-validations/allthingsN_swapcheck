@@ -152,6 +152,8 @@ Base URLs must be HTTPS, except on localhost. Redirects are never followed, so a
 
 Model dates, prices and capabilities come from [swapcheck-registry](https://github.com/allthingsN/swapcheck-registry), which parses 16 provider pages and catalogs every 6 hours. Each snapshot is signed with Ed25519. Swapcheck verifies the signature with a pinned key before it parses anything, refuses a snapshot older than one it already has, and falls back to the copy bundled with the release. Every event links to its source. Corrections are welcome there.
 
+Change notices and open test workloads live in [swapcheck-reports](https://github.com/allthingsN/swapcheck-reports). Every post there is checked against its data and signed before it is published.
+
 ## What it does not do
 
 - It only covers the cases you test. Behavior on anything else is not measured.
