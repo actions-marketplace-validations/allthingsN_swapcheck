@@ -480,8 +480,6 @@ b, strong { font-weight: 600; }
 .install h3 { font: 400 1.2rem/1.2 var(--display); text-transform: uppercase; color: var(--flap-amber); letter-spacing: .02em; }
 .install pre { margin-top: 8px; overflow-x: auto; font: 400 .9rem/1.55 var(--mono); }
 .install pre code { font-weight: 500; }
-.install__note { margin-top: 8px; font: 400 .95rem/1.5 var(--mono); }
-.install__note a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
 .install .copybtn { position: absolute; top: 12px; right: 12px; color: var(--flap-ink); }
 
 /* ---------- docs, security, reports ---------- */

@@ -18,7 +18,7 @@
       <p class="hero__lead">Model IDs are not in a lockfile. A hosted model can be retired, re-routed or repriced while your code and CI stay green. Swapcheck scans your repo, tells you what is changing and when, tests what you could move to on your own cases, and opens a PR with the evidence.</p>
       <div class="hero__cmd" data-copy-root>
         <div class="cmdbar"><span class="cmdbar__p" aria-hidden="true">$</span><code>npx @allthingsai/<wbr>swapcheck</code><button class="copybtn" type="button" data-copy="npx @allthingsai/swapcheck" hidden>Copy</button></div>
-        <p class="hero__alt">Run it inside a project. Needs no keys and spends nothing to scan.</p>
+        <p class="hero__alt">or <code>uvx swapcheck</code>. Run it inside a project. Needs no keys and spends nothing to scan.</p>
       </div>
     </div>
 
@@ -297,7 +297,7 @@
         <div><dt>tool calls</dt><dd>recorded and mocked, never executed</dd></div>
         <div><dt>scanned code</dt><dd>read as text, never run</dd></div>
         <div><dt>registry</dt><dd>Ed25519 signed, public key pinned in the client</dd></div>
-        <div><dt>releases</dt><dd>built and signed in GitHub Actions, with provenance</dd></div>
+        <div><dt>releases</dt><dd>published to npm and PyPI from GitHub Actions, with provenance</dd></div>
         <div><dt>spending</dt><dd>maximum cost shown first; refused without <code>--yes</code> off a terminal</dd></div>
       </dl>
     </div>
@@ -317,7 +317,7 @@
         <thead role="rowgroup"><tr role="row"><td role="cell"></td><th scope="col" role="columnheader">Swapcheck</th><th scope="col" role="columnheader">ModelBump</th><th scope="col" role="columnheader">Modelpin</th></tr></thead>
         <tbody role="rowgroup">
           <tr role="row"><th scope="row" role="rowheader">Pick it when</th><td role="cell" data-label="Swapcheck">You want every kind of provider change on one board, in TS or Python repos</td><td role="cell" data-label="ModelBump">You want Dependabot-style upgrades and prompts repaired for you</td><td role="cell" data-label="Modelpin">You want your app's real requests replayed and drift caught in CI</td></tr>
-          <tr role="row"><th scope="row" role="rowheader">Runs on</th><td role="cell" data-label="Swapcheck">Node 22 via <code>npx</code>; Python wheels on each release</td><td role="cell" data-label="ModelBump">Python 3.12+</td><td role="cell" data-label="Modelpin">Python 3.11+</td></tr>
+          <tr role="row"><th scope="row" role="rowheader">Runs on</th><td role="cell" data-label="Swapcheck">Node 22 via <code>npx</code>; binary wheels via <code>uvx</code></td><td role="cell" data-label="ModelBump">Python 3.12+</td><td role="cell" data-label="Modelpin">Python 3.11+</td></tr>
           <tr role="row"><th scope="row" role="rowheader">Watches for</th><td role="cell" data-label="Swapcheck">Retirements, re-routes, alias moves, prices, parameters, capabilities</td><td role="cell" data-label="ModelBump">Retirements</td><td role="cell" data-label="Modelpin">Retirements</td></tr>
           <tr role="row"><th scope="row" role="rowheader">Registry updates</th><td role="cell" data-label="Swapcheck">Signed snapshot, fetched daily, bundled fallback</td><td role="cell" data-label="ModelBump">Registry of provider retirement dates</td><td role="cell" data-label="Modelpin">Ships inside each release; can point at a newer file</td></tr>
           <tr role="row"><th scope="row" role="rowheader">Finds replacements</th><td role="cell" data-label="Swapcheck">Shortlist by capability, policy and retirement</td><td role="cell" data-label="ModelBump">Uses the replacement the registry suggests</td><td role="cell" data-label="Modelpin">Names the vendor's successor; you choose the candidate</td></tr>
@@ -350,7 +350,8 @@
       </div>
       <div class="install" data-copy-root>
         <h3>Python</h3>
-        <p class="install__note">Signed wheels for Linux, macOS and Windows are on each <a href="https://github.com/allthingsN/swapcheck/releases/latest">GitHub release</a>. PyPI is coming.</p>
+        <pre><code>uvx swapcheck</code></pre>
+        <button class="copybtn" type="button" data-copy hidden>Copy</button>
       </div>
       <div class="install" data-copy-root>
         <h3>GitHub Action</h3>
