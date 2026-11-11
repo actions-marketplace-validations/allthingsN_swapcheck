@@ -305,3 +305,38 @@ client.messages.create({ model: "claude-haiku-4-5", max_tokens: 1, messages: [] 
   });
   assert.deepEqual(scan.findings.map((f) => `${f.model}@${f.line}`), ["claude-haiku-4-5@3"]);
 });
+
+test("a bare alias known only from a secondary source takes its dated version's provider-sourced event", () => {
+  const snapshot = registry();
+  snapshot.events = [
+    event({ id: "s1", model: "claude-sonnet-4-5", route: "anthropic-api", effective: "2026-11-30", date_precision: "estimated", confidence: "low", source: "https://example.com/litellm.json", to: "claude-sonnet-5-5" }),
+    event({ id: "s2", model: "claude-sonnet-4-5-20250929", route: "anthropic-api", effective: "2026-11-30", source: "https://example.com/deprecations", to: "claude-sonnet-5-5" }),
+  ];
+  const scan = { findings: [{ model: "claude-sonnet-4-5", provider: "anthropic", route: "anthropic-api", locations: [{ file: "app.py", line: 3 }] }] } as never;
+  const [item] = computeExposure(scan, snapshot, NOW);
+  assert.deepEqual(item!.resolved_as, ["claude-sonnet-4-5-20250929"]);
+  assert.equal(item!.events[0]!.id, "s2");
+  assert.equal(item!.events.length, 1);
+  assert.match(itemHeadline(item!), /^retires 2026-11-30, in 21 days; successor claude-sonnet-5-5 \(as claude-sonnet-4-5-20250929\)$/);
+  assert.doesNotMatch(itemHeadline(item!), /around/);
+
+  // When the alias itself is provider-sourced, it stays as it is.
+  snapshot.events[0] = { ...snapshot.events[0]!, confidence: "high", date_precision: "exact" };
+  const [own] = computeExposure(scan, snapshot, NOW);
+  assert.equal(own!.resolved_as, undefined);
+  assert.equal(own!.events[0]!.id, "s1");
+});
+
+test("an alias with several dated versions keeps its own event even when they are better sourced", () => {
+  const snapshot = registry();
+  snapshot.events = [
+    event({ id: "g0", provider: "openai", model: "gpt-4o", route: "openai-api", effective: "2027-01-14", date_precision: "estimated", confidence: "low" }),
+    event({ id: "g1", provider: "openai", model: "gpt-4o-2024-05-13", route: "openai-api", effective: "2026-10-21" }),
+    event({ id: "g2", provider: "openai", model: "gpt-4o-2024-08-06", route: "openai-api", effective: "2027-01-14" }),
+  ];
+  const scan = { findings: [{ model: "gpt-4o", provider: "openai", route: "openai-api", locations: [{ file: "app.py", line: 3 }] }] } as never;
+  const [item] = computeExposure(scan, snapshot, NOW);
+  assert.equal(item!.resolved_as, undefined);
+  assert.equal(item!.status, "retiring");
+  assert.deepEqual(item!.events.map((e) => e.id), ["g0"]);
+});

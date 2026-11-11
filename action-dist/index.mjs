@@ -10066,10 +10066,21 @@ function exposureFor(ids, route, snapshot, now, regions) {
   const listed = statuses.filter((status) => status !== "unknown");
   return { events: ordered, status: listed.find((status) => status !== "ok") ?? listed[0] ?? "unknown" };
 }
+var CONFIDENCE_RANK = { low: 0, medium: 1, high: 2 };
+function datedVersionsAreBetterSourced(model, versions, route, snapshot) {
+  const rank = (event) => CONFIDENCE_RANK[event.confidence] ?? 0;
+  const own = snapshot.events.filter((event) => event.model === model && event.route === route);
+  const dated = snapshot.events.filter((event) => versions.includes(event.model) && event.route === route);
+  if (own.length === 0 || dated.length === 0) return false;
+  return own.every((event) => dated.some((other) => other.type === event.type && rank(other) > rank(event)));
+}
 function exposureOf(model, route, snapshot, now, regions) {
   const listed = snapshot.events.some((event) => event.model === model && event.route === route) || snapshot.models.some((row) => row.id === model && row.route === route);
-  if (listed) return exposureFor([model], route, snapshot, now, regions);
   const versions = datedVersions(model, route, snapshot);
+  if (listed && versions.length === 1 && datedVersionsAreBetterSourced(model, versions, route, snapshot)) {
+    return { ...exposureFor(versions, route, snapshot, now, regions), resolved_as: versions };
+  }
+  if (listed) return exposureFor([model], route, snapshot, now, regions);
   if (versions.length === 0) return exposureFor([model], route, snapshot, now, regions);
   return { ...exposureFor(versions, route, snapshot, now, regions), resolved_as: versions };
 }
@@ -12244,7 +12255,7 @@ function resolveProvider(model, route, snapshot, env = process.env, fetchImpl) {
 import path6 from "node:path";
 
 // src/version.ts
-var VERSION = true ? "0.1.4" : "0.0.0-dev";
+var VERSION = true ? "0.1.5" : "0.0.0-dev";
 
 // src/report/index.ts
 var REPORTS_DIR = "swapcheck/reports";

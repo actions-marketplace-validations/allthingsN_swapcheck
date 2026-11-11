@@ -102,11 +102,31 @@ function exposureFor(ids: string[], route: string, snapshot: RegistrySnapshot, n
   return { events: ordered, status: listed.find((status) => status !== "ok") ?? listed[0] ?? "unknown" };
 }
 
+const CONFIDENCE_RANK: Record<string, number> = { low: 0, medium: 1, high: 2 };
+
+/**
+ * A secondary source (LiteLLM's price file, say) often lists the bare alias, while the provider's own
+ * page lists only the dated version. When every alias event is weaker than a dated-version event of the
+ * same kind, the dated versions are the better answer: the provider's date, precision and source.
+ */
+function datedVersionsAreBetterSourced(model: string, versions: string[], route: string, snapshot: RegistrySnapshot): boolean {
+  const rank = (event: RegistryEvent) => CONFIDENCE_RANK[event.confidence] ?? 0;
+  const own = snapshot.events.filter((event) => event.model === model && event.route === route);
+  const dated = snapshot.events.filter((event) => versions.includes(event.model) && event.route === route);
+  if (own.length === 0 || dated.length === 0) return false;
+  return own.every((event) => dated.some((other) => other.type === event.type && rank(other) > rank(event)));
+}
+
 /** Events only apply on the exact route: a Bedrock retirement says nothing about the first-party API. */
 function exposureOf(model: string, route: string, snapshot: RegistrySnapshot, now: Date, regions?: string[]): ModelExposure {
   const listed = snapshot.events.some((event) => event.model === model && event.route === route) || snapshot.models.some((row) => row.id === model && row.route === route);
-  if (listed) return exposureFor([model], route, snapshot, now, regions);
   const versions = datedVersions(model, route, snapshot);
+  // Only when the alias can stand for a single version: OpenAI's `gpt-4o` points at one of three dated
+  // snapshots, and the soonest of them (already retired) says nothing about the alias itself.
+  if (listed && versions.length === 1 && datedVersionsAreBetterSourced(model, versions, route, snapshot)) {
+    return { ...exposureFor(versions, route, snapshot, now, regions), resolved_as: versions };
+  }
+  if (listed) return exposureFor([model], route, snapshot, now, regions);
   if (versions.length === 0) return exposureFor([model], route, snapshot, now, regions);
   // With several versions the deployed one is unknown from the repo, so the soonest change decides.
   return { ...exposureFor(versions, route, snapshot, now, regions), resolved_as: versions };
