@@ -295,3 +295,13 @@ test("trimBaseUrl drops trailing slashes in linear time", () => {
   assert.equal(trimBaseUrl(hostile), hostile);
   assert.ok(performance.now() - started < 50);
 });
+
+test("lists of model families are labels, not calls", async () => {
+  const scan = await scanWith({
+    "app.js": `const MODEL_FAMILIES = ["claude-sonnet-4-5", "gpt-4o", "claude-haiku-4-5"];
+const agent = { model_family: "claude-sonnet-4-5" };
+client.messages.create({ model: "claude-haiku-4-5", max_tokens: 1, messages: [] });
+`,
+  });
+  assert.deepEqual(scan.findings.map((f) => `${f.model}@${f.line}`), ["claude-haiku-4-5@3"]);
+});

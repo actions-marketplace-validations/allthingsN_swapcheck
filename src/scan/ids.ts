@@ -280,8 +280,17 @@ export function recognize(raw: string, index: ModelIndex, inContext: boolean): R
 const NOT_MODEL_TAILS = new Set([
   "path", "dir", "directory", "file", "filename", "folder", "type", "types", "class", "provider", "providers", "kwargs", "args", "params",
   "parameters", "config", "configs", "settings", "options", "version", "url", "uri", "endpoint", "key", "token", "tokens", "size", "count",
-  "cache", "registry", "schema", "field", "fields", "form", "view", "manager", "factory", "loader", "state", "store", "list", "family",
+  "cache", "registry", "schema", "field", "fields", "form", "view", "manager", "factory", "loader", "state", "store", "list", "family", "families",
 ]);
+
+const FAMILY_TAILS = new Set(["family", "families"]);
+
+/** Names like model_family or MODEL_FAMILIES hold category labels people pick or display, not models the code calls. */
+export function isFamilyKey(name: string | undefined): boolean {
+  if (name === undefined || name.length > 80) return false;
+  const words = splitWords(name);
+  return FAMILY_TAILS.has(words[words.length - 1] ?? "");
+}
 
 const MODEL_WORDS = new Set(["model", "models", "llm", "llms", "modelid", "modelname", "modelarn"]);
 const ROUTE_TAIL_WORDS = new Set(["engine", "engines", "deployment", "deployments"]);

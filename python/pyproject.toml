@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "swapcheck"
-version = "0.1.3"
+version = "0.1.4"
 description = "Know when your hosted LLM model is changing, find what to move to, and prove the move on your own cases."
 readme = "README.md"
 license = "Apache-2.0"

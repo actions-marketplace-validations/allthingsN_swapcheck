@@ -7774,8 +7774,15 @@ var NOT_MODEL_TAILS = /* @__PURE__ */ new Set([
   "state",
   "store",
   "list",
-  "family"
+  "family",
+  "families"
 ]);
+var FAMILY_TAILS = /* @__PURE__ */ new Set(["family", "families"]);
+function isFamilyKey(name) {
+  if (name === void 0 || name.length > 80) return false;
+  const words = splitWords(name);
+  return FAMILY_TAILS.has(words[words.length - 1] ?? "");
+}
 var MODEL_WORDS = /* @__PURE__ */ new Set(["model", "models", "llm", "llms", "modelid", "modelname", "modelarn"]);
 var ROUTE_TAIL_WORDS = /* @__PURE__ */ new Set(["engine", "engines", "deployment", "deployments"]);
 var DEPLOYMENT_NAME_TAILS = /* @__PURE__ */ new Set(["name", "id"]);
@@ -8954,6 +8961,7 @@ function isNonUse(tokens, i, stack, lang, inTypeStatement) {
     if (name === "get" && call.argIndex === 0) return true;
   }
   if (top.kind === "array" && arrayFollowedByFilter(tokens, i)) return true;
+  if (isFamilyKey(top.key) || top.kind === "array" && isFamilyKey(top.name)) return true;
   if (isInPriceTable(stack)) return true;
   return top.kind === "object" && hasPricedSibling(tokens, i);
 }
@@ -12236,7 +12244,7 @@ function resolveProvider(model, route, snapshot, env = process.env, fetchImpl) {
 import path6 from "node:path";
 
 // src/version.ts
-var VERSION = true ? "0.1.3" : "0.0.0-dev";
+var VERSION = true ? "0.1.4" : "0.0.0-dev";
 
 // src/report/index.ts
 var REPORTS_DIR = "swapcheck/reports";

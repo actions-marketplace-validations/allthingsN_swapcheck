@@ -4,7 +4,7 @@ import path from "node:path";
 import type { FindingKind, RegistrySnapshot, ScanFinding, ScanResult, UnresolvedCall } from "../types.ts";
 import { SwapcheckError } from "../util/errors.ts";
 import { redactSecrets } from "../util/redact.ts";
-import { ROUTE_AZURE, ROUTE_BEDROCK, ROUTE_OPENROUTER, ROUTE_VERTEX, buildIndex, canonicalRoute, firstPartyRoute, isGenericChildKey, isModelKey, isPriceKey, lookupRow, recognize } from "./ids.ts";
+import { ROUTE_AZURE, ROUTE_BEDROCK, ROUTE_OPENROUTER, ROUTE_VERTEX, buildIndex, canonicalRoute, firstPartyRoute, isFamilyKey, isGenericChildKey, isModelKey, isPriceKey, lookupRow, recognize } from "./ids.ts";
 import type { ModelIndex, Recognition } from "./ids.ts";
 import { CLOSE_JSX, OPEN_JSX, OPEN_TEMPLATE_EXPR, lexJs, lexPython } from "./lexer.ts";
 import type { Token } from "./lexer.ts";
@@ -376,6 +376,7 @@ function isNonUse(tokens: Token[], i: number, stack: Frame[], lang: Lang, inType
     if (name === "get" && call.argIndex === 0) return true;
   }
   if (top.kind === "array" && arrayFollowedByFilter(tokens, i)) return true;
+  if (isFamilyKey(top.key) || (top.kind === "array" && isFamilyKey(top.name))) return true;
   if (isInPriceTable(stack)) return true;
   return top.kind === "object" && hasPricedSibling(tokens, i);
 }
