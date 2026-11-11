@@ -24,7 +24,7 @@ Only the latest release receives security fixes.
 | Reports do not contain prompts by default | Reports store case hashes and scores. Including text is opt-in. |
 | Output cannot inject into CI or PRs | Workflow commands, step summaries and Markdown from external text are escaped. |
 | Forks cannot spend your money | Fork pull requests get the free scan only. Paid modes run only on `pull_request`, `push`, `schedule`, `workflow_dispatch`, `merge_group` and `release`, and refuse every other trigger, including `pull_request_target`, `workflow_run` and `issue_comment`. |
-| Releases are traceable | PyPI releases use OIDC trusted publishing, and the npm package is published with provenance. Every release file also has a GitHub build attestation. npm allows trusted publishing only on an existing package, so the first npm releases used a short-lived token that is deleted once npm trusted publishing is set up. Releases run from `v*` tags in a `release` environment that needs a maintainer's approval. |
+| Releases are traceable | npm and PyPI releases use OIDC trusted publishing with provenance, and no publishing tokens exist. Every release file also has a GitHub build attestation. Releases run from `v*` tags in a `release` environment that needs a maintainer's approval. |
 | Small supply chain | The published npm package has zero runtime dependencies. |
 
 ## What Swapcheck does not protect against
