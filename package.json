@@ -1,6 +1,6 @@
 {
   "name": "@allthingsai/swapcheck",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Know when your LLM model is changing, find what to move to, and prove the move is safe on your own test cases.",
   "license": "Apache-2.0",
   "type": "module",

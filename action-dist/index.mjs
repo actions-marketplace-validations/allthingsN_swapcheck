@@ -12044,7 +12044,7 @@ function resolveProvider(model, route, snapshot, env = process.env, fetchImpl) {
 import path6 from "node:path";
 
 // src/version.ts
-var VERSION = true ? "0.1.1" : "0.0.0-dev";
+var VERSION = true ? "0.1.2" : "0.0.0-dev";
 
 // src/report/index.ts
 var REPORTS_DIR = "swapcheck/reports";

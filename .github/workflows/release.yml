@@ -182,14 +182,11 @@ jobs:
         with:
           node-version: "24"
           registry-url: https://registry.npmjs.org
-      # Trusted publishing needs npm 11.5.1 or newer, and npm exchanges the OIDC identity when it is configured.
-      # npm only allows trusted publishing on a package that already exists, so the very first release uses
-      # NPM_TOKEN, a short-lived token in the release environment. Delete that secret once trusted publishing is set up.
+      # Trusted publishing (OIDC) needs npm 11.5.1 or newer. No npm token is used: npm trusts only release.yml
+      # in allthingsN/swapcheck running in the release environment.
       - run: npm install --global --ignore-scripts npm@11.6.2
       # The leading ./ matters: without it npm reads "artifacts/x.tgz" as a GitHub repo shorthand.
       - run: npm publish ./artifacts/*.tgz --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   publish-pypi:
     needs: attest
