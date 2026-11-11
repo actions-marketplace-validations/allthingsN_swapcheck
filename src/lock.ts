@@ -31,6 +31,9 @@ function validateEntry(value: unknown, position: number): LockEntry {
   for (const field of ["reroute_to", "effective", "registry_event"] as const) {
     if (value[field] !== undefined && typeof value[field] !== "string") throw invalid(`${where}.${field} must be a string`);
   }
+  if (value.regions !== undefined && !(Array.isArray(value.regions) && value.regions.length <= 64 && value.regions.every((region) => typeof region === "string" && region.length > 0 && region.length <= 64))) {
+    throw invalid(`${where}.regions must be a list of region names`);
+  }
   if (value.cost !== undefined && !(isRecord(value.cost) && typeof value.cost.input === "number" && typeof value.cost.output === "number")) {
     throw invalid(`${where}.cost must have numeric input and output`);
   }
@@ -69,12 +72,15 @@ export async function readLock(root: string): Promise<LockFile | null> {
 
 function compareEntries(a: LockEntry, b: LockEntry): number {
   if (a.id !== b.id) return a.id < b.id ? -1 : 1;
-  return a.route < b.route ? -1 : a.route > b.route ? 1 : 0;
+  if (a.route !== b.route) return a.route < b.route ? -1 : 1;
+  const ar = (a.regions ?? []).join(",");
+  const br = (b.regions ?? []).join(",");
+  return ar < br ? -1 : ar > br ? 1 : 0;
 }
 
 /** Fixed key order keeps the file stable, so diffs show only real changes. */
 function orderedEntry(entry: LockEntry): LockEntry {
-  const out: LockEntry = { id: entry.id, route: entry.route, status: entry.status, verified_at: entry.verified_at, baseline: entry.baseline };
+  const out: LockEntry = { id: entry.id, route: entry.route, ...(entry.regions ? { regions: [...entry.regions] } : {}), status: entry.status, verified_at: entry.verified_at, baseline: entry.baseline };
   if (entry.reroute_to !== undefined) out.reroute_to = entry.reroute_to;
   if (entry.effective !== undefined) out.effective = entry.effective;
   if (entry.registry_event !== undefined) out.registry_event = entry.registry_event;
@@ -111,12 +117,14 @@ function primaryEvent(item: ExposureItem): RegistryEvent | undefined {
 
 export function lockFromExposure(items: ExposureItem[], snapshot: RegistrySnapshot, previous?: LockFile | null): LockFile {
   const models = items.map((item): LockEntry => {
-    const prior = previous?.models.find((entry) => entry.id === item.model && entry.route === item.route);
+    const sameRegions = (entry: LockEntry) => (entry.regions ?? []).join(",") === (item.regions ?? []).join(",");
+    const prior = previous?.models.find((entry) => entry.id === item.model && entry.route === item.route && sameRegions(entry)) ?? previous?.models.find((entry) => entry.id === item.model && entry.route === item.route);
     const row = snapshot.models.find((model) => model.id === item.model && model.route === item.route);
     const event = primaryEvent(item);
     const entry: LockEntry = {
       id: item.model,
       route: item.route,
+      ...(item.regions ? { regions: item.regions } : {}),
       status: item.status,
       verified_at: prior?.verified_at ?? null,
       baseline: prior?.baseline ?? null,

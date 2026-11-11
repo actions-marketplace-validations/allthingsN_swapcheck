@@ -9,7 +9,7 @@ import { parseBoundedInt, parseUsd, splitList } from "../cli/args.ts";
 import { describePlan, planComparison, runPlan } from "../cli/compare.ts";
 import { mdEscape } from "../cli/output.ts";
 import { openProject, type Project } from "../cli/project.ts";
-import { renderExposureMarkdown, renderFindMarkdown } from "../cli/render.ts";
+import { itemHeadline, renderExposureMarkdown, renderFindMarkdown } from "../cli/render.ts";
 import { findReplacements } from "../find.ts";
 import { readLock } from "../lock.ts";
 import { exitCodeFor, renderMarkdown } from "../report/index.ts";
@@ -225,9 +225,7 @@ function annotateDue(state: ActionState, due: ExposureItem[]): void {
   for (const item of due.slice(0, MAX_ANNOTATIONS)) {
     const event = item.events[0];
     const where = item.locations[0];
-    const when = event?.effective ? ` on ${event.effective}` : "";
-    const to = event?.to ? `, moving to ${event.to}` : "";
-    annotate("warning", `${item.model} has a ${event?.type.replace(/_/g, " ") ?? "change"}${when}${to}. Source: ${event?.source ?? "registry"}`, {
+    annotate("warning", `${item.model} ${itemHeadline(item)}. Source: ${event?.source ?? "registry"}`, {
       title: "Model change",
       ...(where ? { file: repoPath(state, where.file), line: where.line } : {}),
     });

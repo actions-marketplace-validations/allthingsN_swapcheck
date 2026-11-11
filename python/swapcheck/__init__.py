@@ -8,7 +8,7 @@ from typing import Any, Mapping, Optional, Sequence
 
 from ._binary import binary_path
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 __all__ = ["SwapcheckError", "find", "scan", "test", "watch"]
 
 _EXIT_FINDINGS = 1

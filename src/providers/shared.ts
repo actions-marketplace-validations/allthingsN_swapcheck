@@ -199,8 +199,11 @@ export function stripVendorPrefix(model: string, prefixes: string[]): string {
   return model;
 }
 
+/** Drops trailing slashes. A loop, not a regex, so a URL ending in many slashes stays linear. */
 export function trimBaseUrl(url: string): string {
-  return url.replace(/\/+$/, "");
+  let end = url.length;
+  while (end > 0 && url.charCodeAt(end - 1) === 47) end--;
+  return url.slice(0, end);
 }
 
 export function maxTokensOf(req: ProviderRequest): number {

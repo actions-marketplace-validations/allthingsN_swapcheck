@@ -1,5 +1,6 @@
 import type { LoadedRegistry } from "../registry/client.ts";
 import type { CandidateResult, ExposureItem, FindResult, RegistryEvent, ScanResult, SwapReport, Verdict, WatchResult } from "../types.ts";
+import { describeRegion, listedRegions } from "../scan/regions.ts";
 import { alignRows, clean, mdEscape, mdLink, pct, plural, usd, type Styler } from "./output.ts";
 
 const MAX_LOCATIONS_SHOWN = 3;
@@ -48,16 +49,43 @@ function whenWords(days: number | undefined): string {
   return `, in ${plural(days, "day")}`;
 }
 
+function regionList(regions: string[]): string {
+  const shown = regions.slice(0, 5).map((region) => clean(region, 40)).join(", ");
+  return regions.length > 5 ? `${shown} and ${regions.length - 5} more` : shown;
+}
+
 function eventHeadline(event: RegistryEvent, days: number | undefined): string {
   const target = event.to ? `; successor ${clean(event.to)}` : "";
   const word = (days !== undefined ? days < 0 : hasLanded(event)) ? PAST_WORD[event.type] : EVENT_WORD[event.type];
-  return `${word} ${eventDate(event)}${whenWords(days)}${target}`;
+  const regions = listedRegions(event);
+  const where = regions.length > 0 ? ` (in ${regionList(regions)})` : "";
+  return `${word} ${eventDate(event)}${whenWords(days)}${target}${where}`;
 }
 
 function statusWord(item: ExposureItem): string {
+  if (item.status === "ok" && item.other_regions?.length && item.regions?.length) {
+    const elsewhere = [...new Set(item.other_regions.flatMap(listedRegions))];
+    return `no change announced for ${item.regions.map(describeRegion).join(" or ")}; a change is listed only for ${regionList(elsewhere)}`;
+  }
   if (item.status === "ok") return "no change in the registry";
   if (item.status === "unknown") return "not in the registry";
   return item.status.replace(/_/g, " ");
+}
+
+/** Says which dated registry IDs stand behind an ID that the registry does not list as written. */
+function resolvedNote(item: ExposureItem): string {
+  const versions = item.resolved_as;
+  if (!versions || versions.length === 0) return "";
+  if (versions.length === 1) return ` (as ${clean(versions[0] as string, 120)})`;
+  const shown = versions.slice(0, 4).map((id) => clean(id, 120)).join(", ");
+  const extra = versions.length > 4 ? ` and ${versions.length - 4} more` : "";
+  return ` (depends on the version deployed; soonest of ${shown}${extra})`;
+}
+
+/** One line on what happens to this model, shared by the terminal, Markdown and CI annotations. */
+export function itemHeadline(item: ExposureItem): string {
+  const first = orderedEvents(item)[0];
+  return `${first ? eventHeadline(first, item.days_until) : statusWord(item)}${resolvedNote(item)}`;
 }
 
 function locationSummary(item: ExposureItem): string {
@@ -70,12 +98,13 @@ function itemLines(item: ExposureItem, style: Styler): string[] {
   const lines: string[] = [];
   const events = orderedEvents(item);
   const first = events[0];
-  const headline = first ? eventHeadline(first, item.days_until) : statusWord(item);
+  const headline = itemHeadline(item);
   const urgent = item.status !== "ok" && item.status !== "unknown";
   lines.push(`  ${style.bold(clean(item.model, 120))}  ${urgent ? style.yellow(headline) : style.dim(headline)}`);
   if (item.locations.length > 0) lines.push(`    ${style.dim(locationSummary(item))}`);
   for (const event of events.slice(0, MAX_EVENTS_SHOWN)) {
-    if (event !== first) lines.push(`    ${eventHeadline(event, undefined)}`);
+    const version = (item.resolved_as?.length ?? 0) > 1 ? `${clean(event.model, 120)} ` : "";
+    if (event !== first) lines.push(`    ${version}${eventHeadline(event, undefined)}`);
     lines.push(`    ${style.dim(`source: ${clean(event.source)}`)}`);
   }
   if (events.length > MAX_EVENTS_SHOWN) lines.push(`    ${style.dim(`+${events.length - MAX_EVENTS_SHOWN} more events`)}`);
@@ -114,7 +143,7 @@ export function renderExposureMarkdown(title: string, items: ExposureItem[], reg
   const rows = [...items].sort(compareItems).map((item) => {
     const first = orderedEvents(item)[0];
     const where = item.locations.slice(0, MAX_LOCATIONS_SHOWN).map((l) => `${mdEscape(l.file)}:${l.line}`).join(", ");
-    const change = first ? mdEscape(eventHeadline(first, item.days_until)) : mdEscape(statusWord(item));
+    const change = mdEscape(itemHeadline(item));
     return `| ${mdEscape(item.model, 120)} | ${change} | ${first ? mdLink("source", first.source) : ""} | ${where} |`;
   });
   return [`## ${title}`, "", `Registry snapshot: ${mdEscape(registryDate.slice(0, 10))}`, "", "| Model | Change | Source | Where |", "| --- | --- | --- | --- |", ...rows, ""].join("\n");

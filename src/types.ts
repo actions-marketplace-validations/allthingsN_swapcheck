@@ -28,6 +28,8 @@ export interface RegistryEvent {
   successor_basis?: "provider_named" | "inferred" | "none";
   /** For parameter_change: the rejected request parameters. */
   params?: string[];
+  /** The regions a change covers, with each group's date. A region not listed has no announced change. */
+  region_schedule?: Array<{ regions: string[]; effective: string }>;
   source: string;
   confidence: Confidence;
   first_seen: string;
@@ -80,6 +82,8 @@ export interface ScanFinding {
   kind: FindingKind;
   provider?: string;
   route?: string;
+  /** Cloud regions the call can run in, when the code or config says (such as Bedrock's aws_region_name). */
+  regions?: string[];
   /** True when the string matched a model in the registry (not only a naming pattern). */
   known: boolean;
 }
@@ -106,6 +110,12 @@ export interface ExposureItem {
   events: RegistryEvent[];
   status: "ok" | "unknown" | ModelStatus;
   days_until?: number;
+  /** Dated registry IDs used because the ID as written is not listed on this route, such as a provider alias. */
+  resolved_as?: string[];
+  /** Cloud regions the call can run in; region-specific changes elsewhere are left out. */
+  regions?: string[];
+  /** Region-limited events left out because the call runs elsewhere. */
+  other_regions?: RegistryEvent[];
 }
 
 export type ModelStatus = "retiring" | "retired" | "reroute_scheduled" | "rerouted" | "repricing" | "parameter_change";
@@ -121,6 +131,7 @@ export interface WatchResult {
 export interface LockEntry {
   id: string;
   route: string;
+  regions?: string[];
   status: ExposureItem["status"];
   reroute_to?: string;
   effective?: string;

@@ -159,6 +159,9 @@ Change notices and open test workloads live in [swapcheck-reports](https://githu
 - It only covers the cases you test. Behavior on anything else is not measured.
 - API replay can't see changes in a consumer product or an agent harness around the model.
 - The scanner reads JavaScript, TypeScript, Python and common config formats. It does not read shell scripts or other languages, and a model ID built at runtime is listed as unresolved rather than guessed.
+- In a LiteLLM proxy config or Router, it checks the models each route calls (`litellm_params.model`). Route names (`model_name`) are your own labels, so they are skipped, also where other code calls the proxy by those names.
+- Amazon Bedrock retires models region by region. A Bedrock change is only reported when it covers the region set in `aws_region_name` or `region_name`, or the regions an inference profile such as `us.` reaches. With no region in the repo, the change is shown with the regions it covers.
+- An Azure deployment name such as `gpt-4o` does not say which dated version is deployed, so the soonest retirement among Azure's versions is shown, and the versions are listed.
 
 ## Security and privacy
 

@@ -206,6 +206,9 @@ jobs:
         <li><strong>Five runs detect large drops, not small ones.</strong> Raise <code>--runs</code> to find smaller differences, at more cost.</li>
         <li><strong>The registry is what providers announce.</strong> An unannounced change will not appear. Dates can move.</li>
         <li><strong>The scanner reads source statically.</strong> IDs built at runtime are reported as unresolved. Declare them in <code>swapcheck.yaml</code>.</li>
+        <li><strong>LiteLLM route names are not model IDs.</strong> In a proxy config or Router, Swapcheck checks <code>litellm_params.model</code> and skips <code>model_name</code>, also where other code calls the proxy by that name.</li>
+        <li><strong>Bedrock changes are per region.</strong> A change is reported when it covers the region in <code>aws_region_name</code> or <code>region_name</code>, or the regions an inference profile such as <code>us.</code> reaches.</li>
+        <li><strong>An Azure deployment hides its version.</strong> For a deployment such as <code>gpt-4o</code>, the soonest retirement among Azure's dated versions is shown.</li>
         <li><strong>A result describes one day.</strong> A hosted model can change after you test it.</li>
         <li><strong><code>bump</code> edits IDs and parameters.</strong> It does not rewrite your prompts.</li>
         <li><strong>Accuracy has not been published yet.</strong> The test suite targets under 5% false alarms and 80% of seeded regressions caught, in simulation.</li>

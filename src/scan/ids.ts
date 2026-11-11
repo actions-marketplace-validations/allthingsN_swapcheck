@@ -331,13 +331,19 @@ export function canonicalRoute(index: ModelIndex, route: string): string {
   return route;
 }
 
+const THIRD_PARTY_ROUTE = /bedrock|vertex|azure|foundry|openrouter|groq|together|fireworks/;
+
 /** The vendor's own API, read from the registry when it lists the model. */
 export function firstPartyRoute(index: ModelIndex, model: string, vendor: string | undefined): string | undefined {
   const expected = vendor === undefined ? undefined : FIRST_PARTY_ROUTE[vendor];
   const routes = index.routes.get(model);
   if (!routes || routes.size === 0) return expected;
   if (expected !== undefined && routes.has(expected)) return expected;
-  if (routes.size === 1) return [...routes][0];
+  const only = routes.size === 1 ? [...routes][0] : undefined;
+  // A bare ID with no platform signal goes to the vendor's own API, never to a cloud that also lists it:
+  // Azure retiring claude-opus-4-1 says nothing about Anthropic's API.
+  const vendorApiKnown = expected !== undefined && index.allRoutes.has(expected);
+  if (only !== undefined && (!vendorApiKnown || !THIRD_PARTY_ROUTE.test(only))) return only;
   if (vendor !== undefined) {
     for (const route of routes) {
       if (route.startsWith(`${vendor}-`)) return route;

@@ -97,7 +97,15 @@ function isValidEvent(row: unknown): row is RegistryEvent {
   if (!isOptionalMember(row.date_precision, DATE_PRECISION)) return false;
   if (!isOptionalMember(row.billing, BILLING) || !isOptionalMember(row.successor_basis, SUCCESSOR_BASIS)) return false;
   if (row.params !== undefined && !(Array.isArray(row.params) && row.params.every(isText))) return false;
+  if (row.region_schedule !== undefined && !isRegionSchedule(row.region_schedule)) return false;
   return true;
+}
+
+const MAX_REGION_ROWS = 64;
+
+function isRegionSchedule(value: unknown): boolean {
+  if (!Array.isArray(value) || value.length === 0 || value.length > MAX_REGION_ROWS) return false;
+  return value.every((row) => isRecord(row) && isCalendarDate(row.effective) && Array.isArray(row.regions) && row.regions.length > 0 && row.regions.length <= MAX_REGION_ROWS && row.regions.every(isText));
 }
 
 function isValidModel(row: unknown): row is RegistryModel {

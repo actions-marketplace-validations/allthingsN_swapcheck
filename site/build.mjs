@@ -251,10 +251,15 @@ function calendarMarkup(snapshot, fixture) {
   };
 }
 
+/** allthingsn.com or a subdomain of it; a host such as evilallthingsn.com does not count. */
+function isAllthingsnHost(hostname) {
+  return hostname === "allthingsn.com" || hostname.endsWith(".allthingsn.com");
+}
+
 function reportsMarkup() {
   const reports = JSON.parse(readFileSync(join(SITE, "data", "reports.json"), "utf8"));
   const published = reports
-    .filter((r) => safeUrl(r.url) && new URL(r.url).hostname.endsWith("allthingsn.com"))
+    .filter((r) => safeUrl(r.url) && isAllthingsnHost(new URL(r.url).hostname))
     .sort((a, b) => (a.date < b.date ? 1 : -1));
   if (published.length === 0) {
     return `<div class="reports-empty"><div class="reports-empty__flap">${flap("FIRST REPORTS", { cls: "flap--report" })}${flap("PUBLISH SOON", { cls: "flap--report" })}</div><p>None are published yet, so nothing is listed here. A report will appear only after it has been measured and written up on allthingsn.com.</p><p>Until then, the <a href="calendar.html">calendar</a> shows what is changing, and you can <a href="docs.html#quickstart">run the same test on your own cases</a>.</p></div>`;

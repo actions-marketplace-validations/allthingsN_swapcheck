@@ -8,6 +8,7 @@ import { ROUTE_AZURE, ROUTE_BEDROCK, ROUTE_OPENROUTER, ROUTE_VERTEX, buildIndex,
 import type { ModelIndex, Recognition } from "./ids.ts";
 import { CLOSE_JSX, OPEN_JSX, OPEN_TEMPLATE_EXPR, lexJs, lexPython } from "./lexer.ts";
 import type { Token } from "./lexer.ts";
+import { AWS_REGION, isRegionKey, profileToken } from "./regions.ts";
 
 export type Lang = "js" | "py";
 type FrameKind = "call" | "index" | "array" | "object" | "block" | "paren" | "tmpl" | "jsx";
@@ -515,6 +516,10 @@ function resolveRoute(rec: Recognition, signals: Signal[], line: number, index: 
 interface Collector {
   index: ModelIndex;
   findings: ScanFinding[];
+  /** Route names declared by LiteLLM configs or Routers anywhere in the repo. */
+  routeNames: Set<string>;
+  /** The text each finding was read from, and whether it is the real model behind a LiteLLM route. */
+  origins: WeakMap<ScanFinding, { raw: string; litellmModel: boolean }>;
   unresolved: UnresolvedCall[];
   includeDocs: boolean;
   fileTimeLimitMs: number;
@@ -523,13 +528,102 @@ interface Collector {
   scanStopped: boolean;
 }
 
-function addFinding(out: Collector, rec: Recognition, route: string | undefined, file: string, line: number, column: number, kind: FindingKind): void {
+function addFinding(out: Collector, rec: Recognition, route: string | undefined, file: string, line: number, column: number, kind: FindingKind, origin?: { raw: string; litellmModel: boolean }, explicitRegions?: string[]): void {
   if (out.findings.length >= MAX_FINDINGS) return;
   const provider = lookupRow(out.index, rec.model, route)?.provider ?? out.index.providers.get(rec.model) ?? rec.vendor;
   const finding: ScanFinding = { model: rec.model, file, line, column, kind, known: rec.known };
   if (provider !== undefined) finding.provider = provider;
   if (route !== undefined) finding.route = route;
+  const regions = route === ROUTE_BEDROCK && origin ? bedrockRegions(origin.raw, explicitRegions) : undefined;
+  if (regions) finding.regions = regions;
   out.findings.push(finding);
+  if (origin) out.origins.set(finding, origin);
+}
+
+/** The regions a Bedrock call can run in: the configured region plus the reach of an inference profile. */
+function bedrockRegions(raw: string, explicit: string[] | undefined): string[] | undefined {
+  const profile = profileToken(raw);
+  const all = [...new Set([...(explicit ?? []), ...(profile ? [profile] : [])])].sort();
+  return all.length > 0 ? all : undefined;
+}
+
+interface RegionSignal {
+  line: number;
+  region: string;
+}
+
+/** `region_name="us-west-2"`, `region: "us-west-2"` or `os.getenv("AWS_REGION", "us-west-2")` in code. */
+function codeRegionSignals(tokens: Token[]): RegionSignal[] {
+  const signals: RegionSignal[] = [];
+  for (let i = 2; i < tokens.length; i++) {
+    const token = tokens[i] as Token;
+    if (!isStringLike(token) || token.dynamic || !AWS_REGION.test(token.value)) continue;
+    const sep = tokens[i - 1]?.value;
+    const key = tokens[i - 2];
+    const keyed = (sep === "=" || sep === ":") && key !== undefined && (key.kind === "ident" || isStringLike(key)) && isRegionKey(key.value);
+    const envDefault = sep === "," && key !== undefined && isStringLike(key) && isRegionKey(key.value);
+    if (keyed || envDefault) signals.push({ line: token.line, region: token.value });
+  }
+  return signals;
+}
+
+/** The closest region set above the call, or failing that just below it. */
+function nearestRegion(signals: RegionSignal[], line: number): string[] | undefined {
+  let before: RegionSignal | undefined;
+  let after: RegionSignal | undefined;
+  for (const signal of signals) {
+    if (signal.line <= line) {
+      if (!before || signal.line >= before.line) before = signal;
+    } else if (signal.line - line <= SIGNAL_LOOKAHEAD_LINES && (!after || signal.line < after.line)) {
+      after = signal;
+    }
+  }
+  const chosen = before ?? after;
+  return chosen ? [chosen.region] : undefined;
+}
+
+/** Regions set in each list item of a config file, with item 0 for the top level. */
+function configRegions(pairs: ConfigPair[]): Map<number, Set<string>> {
+  const byItem = new Map<number, Set<string>>();
+  for (const pair of pairs) {
+    const key = pair.path[pair.path.length - 1] ?? "";
+    if (!isRegionKey(key) || !AWS_REGION.test(pair.value)) continue;
+    const item = pair.item ?? 0;
+    if (!byItem.has(item)) byItem.set(item, new Set());
+    byItem.get(item)?.add(pair.value);
+  }
+  return byItem;
+}
+
+/** A pair's region comes from its own list item, else from the top level of the file. */
+function regionsFor(pair: ConfigPair, byItem: Map<number, Set<string>>): string[] | undefined {
+  const own = byItem.get(pair.item ?? 0) ?? byItem.get(0);
+  return own && own.size > 0 ? [...own].sort() : undefined;
+}
+
+/**
+ * Code that calls a LiteLLM proxy or Router passes the route name, and the proxy decides the real model.
+ * So once a repo declares route names, a value equal to one is the route, not a model ID, wherever it appears.
+ * The real models inside litellm_params are kept.
+ */
+function dropLitellmRouteNames(out: Collector): void {
+  if (out.routeNames.size === 0) return;
+  out.findings = out.findings.filter((finding) => {
+    const origin = out.origins.get(finding);
+    return !origin || origin.litellmModel || !out.routeNames.has(origin.raw);
+  });
+}
+
+/** String values given to `model_name` in a Python or JS LiteLLM Router, when the file builds one. */
+function codeRouteNames(tokens: Token[]): string[] {
+  if (!tokens.some((token) => token.value === "litellm_params")) return [];
+  const names: string[] = [];
+  for (let i = 2; i < tokens.length; i++) {
+    const token = tokens[i] as Token;
+    const sep = tokens[i - 1]?.value;
+    if (isStringLike(token) && !token.dynamic && (sep === ":" || sep === "=") && tokens[i - 2]?.value === "model_name") names.push(token.value);
+  }
+  return names;
 }
 
 function addUnresolved(out: Collector, source: string, token: Token, file: string, reason: string): void {
@@ -557,9 +651,13 @@ function scanCode(rel: string, source: string, out: Collector, docKind: boolean,
   if (!lexed) return;
   const { tokens, codeTokens, lang } = lexed;
   const signals = collectSignals(codeTokens);
+  const routeNames = codeRouteNames(codeTokens);
+  for (const name of routeNames) out.routeNames.add(name);
+  const regionSignals = codeRegionSignals(codeTokens);
   walkTokens(codeTokens, lang, (i, stack, inTypeStatement) => {
     const token = codeTokens[i] as Token;
     if (token.unterminated || isNonUse(codeTokens, i, stack, lang, inTypeStatement)) return;
+    if (routeNames.length > 0 && stack[stack.length - 1]?.key === "model_name") return;
     const context = hasModelContext(codeTokens, i, stack);
     if (token.dynamic) {
       if (context && !docKind && couldBePartOfModelId(token.value)) {
@@ -572,7 +670,8 @@ function scanCode(rel: string, source: string, out: Collector, docKind: boolean,
       if (context && !docKind && isConcatenated(codeTokens, i)) addUnresolved(out, source, token, rel, "The model name is concatenated at runtime, so its value is only known at runtime.");
       return;
     }
-    addFinding(out, rec, resolveRoute(rec, signals, token.line, out.index), rel, token.line, token.column, docKind ? "docs" : "code");
+    const litellmModel = stack.some((frame) => frame.name === "litellm_params");
+    addFinding(out, rec, resolveRoute(rec, signals, token.line, out.index), rel, token.line, token.column, docKind ? "docs" : "code", { raw: token.value, litellmModel }, nearestRegion(regionSignals, token.line));
   }, limits);
   if (out.includeDocs) {
     for (const token of tokens) {
@@ -613,6 +712,8 @@ interface ConfigPair {
   value: string;
   line: number;
   column: number;
+  /** The list item that holds this pair, such as one LiteLLM route; 0 outside any list item. */
+  item?: number;
 }
 
 function pathHintsModel(keys: string[]): boolean {
@@ -642,19 +743,37 @@ function configSignal(keys: string[], value: string, line: number): Signal | und
   return undefined;
 }
 
+/**
+ * A LiteLLM proxy config names each route with `model_name` and calls the real model in `litellm_params.model`.
+ * The route names are the proxy's own labels, also used by router settings such as fallbacks, so they are never
+ * model IDs even when they look like one.
+ */
+function litellmRouteNames(pairs: ConfigPair[]): Set<string> | undefined {
+  if (!pairs.some((pair) => pair.path.includes("litellm_params"))) return undefined;
+  return new Set(pairs.filter((pair) => pair.path[pair.path.length - 1] === "model_name").map((pair) => pair.value));
+}
+
+/** model_info.base_model names the real model behind an Azure deployment, so it counts as the route's model. */
+function isLitellmModel(pair: ConfigPair): boolean {
+  return pair.path.includes("litellm_params") || pair.path.includes("model_info");
+}
+
 function reportPairs(rel: string, pairs: ConfigPair[], extraSignals: Signal[], kind: FindingKind, out: Collector, docKind: boolean, limits?: WorkLimits): void {
   const signals = [...extraSignals];
   for (const pair of pairs) {
     const signal = configSignal(pair.path, pair.value, pair.line);
     if (signal) signals.push(signal);
   }
+  const routeNames = litellmRouteNames(pairs);
+  for (const name of routeNames ?? []) out.routeNames.add(name);
+  const regionsByItem = configRegions(pairs);
   for (let n = 0; n < pairs.length; n++) {
     if (pastDeadline(limits, n)) break;
     const pair = pairs[n] as ConfigPair;
-    if (!pathHintsModel(pair.path)) continue;
+    if (!pathHintsModel(pair.path) || (routeNames && pair.path[pair.path.length - 1] === "model_name")) continue;
     const rec = recognize(pair.value, out.index, true);
     if (!rec) continue;
-    addFinding(out, rec, resolveRoute(rec, signals, pair.line, out.index), rel, pair.line, pair.column, docKind ? "docs" : kind);
+    addFinding(out, rec, resolveRoute(rec, signals, pair.line, out.index), rel, pair.line, pair.column, docKind ? "docs" : kind, { raw: pair.value, litellmModel: isLitellmModel(pair) }, regionsFor(pair, regionsByItem));
   }
 }
 
@@ -736,6 +855,8 @@ function pushScalar(raw: string, column: number, keys: string[], line: number, p
 export function parseYamlPairs(source: string): ConfigPair[] {
   const pairs: ConfigPair[] = [];
   const stack: Array<{ indent: number; key: string }> = [];
+  const items: Array<{ indent: number; id: number }> = [];
+  let itemCount = 0;
   let blockScalarIndent = -1;
   splitLines(source).forEach((text, n) => {
     if (text.length > MAX_CONFIG_LINE) return;
@@ -749,6 +870,14 @@ export function parseYamlPairs(source: string): ConfigPair[] {
     if (!trimmed || trimmed.startsWith("#") || trimmed === "---" || trimmed === "...") return;
     let body = text.slice(indent);
     let column = indent + 1;
+    const isItem = body === "-" || body.startsWith("- ");
+    while (items.length > 0 && (items[items.length - 1] as { indent: number }).indent >= indent) items.pop();
+    if (isItem) items.push({ indent, id: ++itemCount });
+    const item = items[items.length - 1]?.id ?? 0;
+    const firstPair = pairs.length;
+    const tag = (): void => {
+      for (let k = firstPair; k < pairs.length; k++) (pairs[k] as ConfigPair).item = item;
+    };
     if (body === "-" || body.startsWith("- ")) {
       const after = body.slice(1);
       const skipped = 1 + leadingSpaces(after);
@@ -761,6 +890,7 @@ export function parseYamlPairs(source: string): ConfigPair[] {
     const colon = yamlColon(body);
     if (colon < 0) {
       if (body) pushScalar(body, column, stack.map((entry) => entry.key), lineNo, pairs);
+      tag();
       return;
     }
     const { value: key } = unquote(body.slice(0, colon).trim());
@@ -774,6 +904,7 @@ export function parseYamlPairs(source: string): ConfigPair[] {
     } else if (valueText && !valueText.startsWith("#")) {
       pushScalar(valueText, valueColumn, keys, lineNo, pairs);
     }
+    tag();
     if (!valueText || valueText.startsWith("#")) stack.push({ indent, key });
   });
   return pairs;
@@ -858,8 +989,12 @@ export function parseJsonPairs(source: string, limits?: WorkLimits): ConfigPair[
   const { tokens, truncated } = lexJs(source, limits ? { deadline: limits.deadline } : {});
   if (truncated && limits) limits.truncated = true;
   const path: Array<string | undefined> = [];
+  // Each object directly inside an array is one list item, such as one LiteLLM route.
+  const containers: Array<{ array: boolean; item: number }> = [];
+  let itemCount = 0;
   let pending: string | undefined;
   const keys = (): string[] => [...path, pending].filter((key): key is string => key !== undefined);
+  const currentItem = (): number => containers[containers.length - 1]?.item ?? 0;
   for (let i = 0; i < tokens.length; i++) {
     if (pastDeadline(limits, i)) break;
     if (path.length > MAX_BRACKET_DEPTH) {
@@ -871,13 +1006,16 @@ export function parseJsonPairs(source: string, limits?: WorkLimits): ConfigPair[
       if (tokens[i + 1]?.value === ":") {
         pending = token.value;
       } else {
-        if (!token.unterminated) pairs.push({ path: keys(), value: token.value, line: token.line, column: token.column });
+        if (!token.unterminated) pairs.push({ path: keys(), value: token.value, line: token.line, column: token.column, item: currentItem() });
         pending = undefined;
       }
     } else if (token.value === "{" || token.value === "[") {
+      const parent = containers[containers.length - 1];
+      containers.push({ array: token.value === "[", item: token.value === "{" && parent?.array ? ++itemCount : currentItem() });
       path.push(pending);
       pending = undefined;
     } else if (token.value === "}" || token.value === "]") {
+      containers.pop();
       path.pop();
       pending = undefined;
     }
@@ -1245,6 +1383,8 @@ export async function scanProject(root: string, snapshot: RegistrySnapshot, opts
   const out: Collector = {
     index: buildIndex(snapshot),
     findings: [],
+    routeNames: new Set(),
+    origins: new WeakMap(),
     unresolved: [],
     includeDocs: opts.includeDocs === true,
     fileTimeLimitMs: opts.fileTimeLimitMs ?? FILE_TIME_LIMIT_MS,
@@ -1254,6 +1394,7 @@ export async function scanProject(root: string, snapshot: RegistrySnapshot, opts
   const excludeRules = (opts.exclude ?? []).slice(0, MAX_IGNORE_RULES).flatMap((line) => parseIgnoreRule(line, "") ?? []);
   const state: WalkState = { count: 0, onProgress: opts.onProgress };
   await walkDir(realRoot, "", [], excludeRules, 0, state, out);
+  dropLitellmRouteNames(out);
   out.findings.sort(compareFindings);
   out.unresolved.sort(compareFindings);
   return { root: base, files_scanned: state.count, findings: out.findings, unresolved: out.unresolved };
